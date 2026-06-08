@@ -1,0 +1,127 @@
+@import "tailwindcss";
+
+:root {
+  --background-primary: #ffffff;
+  --background-secondary: #f6f6f6;
+  --foreground-primary: #0e1011;
+  --foreground-secondary: #0e101199;
+  --border-accent: #ececec;
+  --border-transparent: #0e10114d;
+  --shadow-color: rgba(14, 16, 17, 0.08);
+
+  --fjord-bg: var(--background-secondary);
+  --fjord-panel: rgba(255, 255, 255, 0.88);
+  --fjord-panel-strong: #ffffff;
+  --fjord-ink: var(--foreground-primary);
+  --fjord-muted: var(--foreground-secondary);
+  --fjord-line: var(--border-transparent);
+  --fjord-soft-line: var(--border-accent);
+  --fjord-accent: #0e1011;
+  --fjord-accent-soft: var(--background-secondary);
+  --fjord-warm: #d8ccb7;
+  --fjord-success: #2f5a4f;
+}
+
+[data-theme="dark"] {
+  --background-primary: #0e1011;
+  --background-secondary: #181b1c;
+  --foreground-primary: #ffffff;
+  --foreground-secondary: #9f9fa0;
+  --border-accent: #202324;
+  --border-transparent: #ffffff1a;
+  --shadow-color: rgba(0, 0, 0, 0.45);
+
+  --fjord-bg: var(--background-secondary);
+  --fjord-panel: rgba(24, 27, 28, 0.88);
+  --fjord-panel-strong: #181b1c;
+  --fjord-ink: var(--foreground-primary);
+  --fjord-muted: var(--foreground-secondary);
+  --fjord-line: var(--border-transparent);
+  --fjord-soft-line: var(--border-accent);
+  --fjord-accent: #ffffff;
+  --fjord-accent-soft: var(--background-secondary);
+  --fjord-warm: #4a3f2d;
+  --fjord-success: #3e7e6e;
+}
+
+@theme {
+  --color-fjord-bg: var(--fjord-bg);
+  --color-fjord-panel: var(--fjord-panel);
+  --color-fjord-panel-strong: var(--fjord-panel-strong);
+  --color-fjord-ink: var(--fjord-ink);
+  --color-fjord-muted: var(--fjord-muted);
+  --color-fjord-line: var(--fjord-line);
+  --color-fjord-soft-line: var(--fjord-soft-line);
+  --color-fjord-accent: var(--fjord-accent);
+  --color-fjord-accent-soft: var(--fjord-accent-soft);
+  --color-fjord-warm: var(--fjord-warm);
+  --color-fjord-success: var(--fjord-success);
+  
+  --radius-fjord-lg: 28px;
+  --radius-fjord-md: 20px;
+  --radius-fjord-sm: 14px;
+  
+  --shadow-fjord-soft: 0 24px 60px var(--shadow-color);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  padding: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  background-color: var(--background-secondary);
+  color: var(--foreground-primary);
+}
+
+/* Sidebar pattern overlay */
+.sidebar-pattern::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgba(14, 16, 17, 0.03) 25%, transparent 25%) -12px 0 / 24px 24px,
+    linear-gradient(225deg, rgba(14, 16, 17, 0.03) 25%, transparent 25%) -12px 0 / 24px 24px,
+    linear-gradient(315deg, rgba(14, 16, 17, 0.02) 25%, transparent 25%) 0 0 / 24px 24px,
+    linear-gradient(45deg, rgba(14, 16, 17, 0.02) 25%, transparent 25%) 0 0 / 24px 24px;
+  opacity: 0.7;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Custom keyframes and classes for premium upload states */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-float {
+  animation: float 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgba(24, 27, 28, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(24, 27, 28, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(24, 27, 28, 0);
+  }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 1.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
