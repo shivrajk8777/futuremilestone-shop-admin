@@ -26,13 +26,43 @@ export default function OrderList({ orders }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [filterDate, setFilterDate] = useState("");
 
-  const filteredOrders = orders.filter((o) =>
-    o.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    o.status?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredOrders = orders.filter((o) => {
+    // 1. Search Query filter
+    const matchesSearch =
+      searchQuery === "" ||
+      o.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.status?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // 2. Status filter
+    const matchesStatus =
+      statusFilter === "All" ||
+      o.status?.toLowerCase() === statusFilter.toLowerCase();
+
+    // 3. Date filter (match exact local calendar day)
+    let matchesDate = true;
+    if (filterDate) {
+      if (!o.createdAt) {
+        matchesDate = false;
+      } else {
+        const orderTime = new Date(o.createdAt).getTime();
+
+        const [yr, mo, dy] = filterDate.split("-").map(Number);
+        const start = new Date(yr, mo - 1, dy, 0, 0, 0, 0).getTime();
+        const end = new Date(yr, mo - 1, dy, 23, 59, 59, 999).getTime();
+
+        if (orderTime < start || orderTime > end) {
+          matchesDate = false;
+        }
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
+  });
 
   const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
@@ -50,7 +80,8 @@ export default function OrderList({ orders }) {
   return (
     <div className="bg-fjord-panel-strong border border-fjord-soft-line rounded-[24px] overflow-hidden shadow-fjord-soft">
       {/* Search and Page Controls */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-b border-fjord-soft-line bg-fjord-bg/20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border-b border-fjord-soft-line bg-fjord-bg/20">
+        {/* Left Side: Entries count */}
         <div className="flex items-center gap-2 text-[13px] text-fjord-muted">
           <span>Show</span>
           <select
@@ -68,20 +99,73 @@ export default function OrderList({ orders }) {
           </select>
           <span>entries</span>
         </div>
-        <div className="relative w-full sm:w-64">
-          <input
-            type="text"
-            placeholder="Search orders..."
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-            className="w-full bg-fjord-panel-strong border border-fjord-soft-line rounded-full px-4 py-1.5 pl-9 text-[13px] text-fjord-ink placeholder-fjord-muted outline-none focus:border-fjord-ink/20 focus:ring-2 focus:ring-fjord-ink/4 transition-all"
-          />
-          <svg className="absolute left-3.5 top-2.5 w-4 h-4 text-fjord-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+
+        {/* Right Side: Filters & Search grouped together */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-[13px] w-full md:w-auto">
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-fjord-muted whitespace-nowrap">Status:</span>
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-fjord-panel-strong border border-fjord-soft-line rounded-lg px-3 py-1.5 text-fjord-ink font-medium focus:outline-none min-w-[120px]"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Processing">Processing</option>
+              <option value="Shipped">Shipped</option>
+              <option value="Delivered">Delivered</option>
+              <option value="Refunded">Refunded</option>
+            </select>
+          </div>
+
+          {/* Date Filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-fjord-muted whitespace-nowrap">Date:</span>
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => {
+                setFilterDate(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="bg-fjord-panel-strong border border-fjord-soft-line rounded-lg px-3 py-1 text-fjord-ink font-medium focus:outline-none text-[12px] h-[34px] w-[130px]"
+            />
+          </div>
+
+          {/* Clear Filters Button */}
+          {(filterDate !== "" || statusFilter !== "All" || searchQuery !== "") && (
+            <button
+              onClick={() => {
+                setFilterDate("");
+                setStatusFilter("All");
+                setSearchQuery("");
+                setCurrentPage(1);
+              }}
+              className="text-fjord-accent font-semibold hover:underline cursor-pointer select-none text-[12px] whitespace-nowrap"
+            >
+              Clear
+            </button>
+          )}
+
+          {/* Search Input */}
+          <div className="relative w-full sm:w-48 lg:w-64">
+            <input
+              type="text"
+              placeholder="Search orders..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full bg-fjord-panel-strong border border-fjord-soft-line rounded-full px-4 py-1.5 pl-9 text-[13px] text-fjord-ink placeholder-fjord-muted outline-none focus:border-fjord-ink/20 focus:ring-2 focus:ring-fjord-ink/4 transition-all"
+            />
+            <svg className="absolute left-3.5 top-2.5 w-4 h-4 text-fjord-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
         </div>
       </div>
 
