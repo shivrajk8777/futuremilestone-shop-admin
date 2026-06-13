@@ -33,7 +33,7 @@ export default function AdminShell({ admin, children }) {
   return (
     <div className="min-h-screen p-2 sm:p-3 text-fjord-ink">
       <div className="min-h-[calc(100vh-24px)] grid grid-cols-1 xl:grid-cols-[292px_minmax(0,1fr)] gap-3">
-        <aside className="relative sticky top-3 self-start min-h-[calc(100vh-24px)] p-4 sm:p-6 bg-fjord-panel backdrop-blur-[18px] border border-fjord-soft-line rounded-[36px] shadow-fjord-soft flex flex-col gap-6 overflow-hidden max-xl:static max-xl:min-h-0 sidebar-pattern">
+        <aside className="relative sticky top-3 self-start min-h-[calc(100vh-24px)] p-4 sm:p-6 bg-fjord-panel backdrop-blur-[18px] border border-fjord-soft-line rounded-[36px] shadow-fjord-soft flex flex-col gap-6 overflow-hidden max-xl:static max-xl:min-h-0">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-fjord-ink text-fjord-bg grid place-items-center text-[16px] font-bold">F</div>
