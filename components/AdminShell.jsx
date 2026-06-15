@@ -9,7 +9,9 @@ const navigation = [
   { href: "/products", label: "Products", meta: "Catalog", icon: "02" },
   { href: "/collections", label: "Collections", meta: "Merch", icon: "03" },
   { href: "/orders", label: "Orders", meta: "Fulfillment", icon: "04" },
-  { href: "/blogs", label: "Blogs", meta: "Editorial", icon: "05" },
+  { href: "/discounts", label: "Discounts", meta: "Campaigns", icon: "05" },
+  { href: "/blogs", label: "Blogs", meta: "Editorial", icon: "06" },
+  { href: "/master", label: "Master Settings", meta: "Configuration", icon: "07" },
 ];
 
 export default function AdminShell({ admin, children }) {
