@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
+import { reorderCollectionsAction } from "./actions";
 
 function formatDate(value) {
   return new Intl.DateTimeFormat("en-IN", {
@@ -11,10 +13,32 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function GripIcon() {
+  return (
+    <svg className="w-4 h-4 text-fjord-muted/60 cursor-grab active:cursor-grabbing flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+      <circle cx="9" cy="5" r="2" />
+      <circle cx="9" cy="12" r="2" />
+      <circle cx="9" cy="19" r="2" />
+      <circle cx="15" cy="5" r="2" />
+      <circle cx="15" cy="12" r="2" />
+      <circle cx="15" cy="19" r="2" />
+    </svg>
+  );
+}
+
 export default function CollectionList({ collections }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [isReordering, setIsReordering] = useState(false);
+  const [orderedList, setOrderedList] = useState(collections);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setOrderedList(collections);
+  }, [collections]);
 
   const filteredCollections = collections.filter((c) =>
     c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -26,6 +50,68 @@ export default function CollectionList({ collections }) {
   const startIndex = (currentPage - 1) * rowsPerPage;
   const paginatedCollections = filteredCollections.slice(startIndex, startIndex + rowsPerPage);
 
+  const handleDragStart = (e, index) => {
+    if (isSaving) return;
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    if (isSaving || draggedIndex === null || draggedIndex === index) return;
+
+    const newList = [...orderedList];
+    const draggedItem = newList[draggedIndex];
+    newList.splice(draggedIndex, 1);
+    newList.splice(index, 0, draggedItem);
+
+    setDraggedIndex(index);
+    setOrderedList(newList);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const handleCancel = () => {
+    setOrderedList(collections);
+    setIsReordering(false);
+  };
+
+  const handleSaveOrder = async () => {
+    setIsSaving(true);
+    const orderedIds = orderedList.map((c) => c.id);
+
+    try {
+      const result = await reorderCollectionsAction(orderedIds);
+      if (result?.error) {
+        Swal.fire({
+          icon: "error",
+          text: result.error,
+          confirmButtonColor: "#181b1c",
+        });
+      } else {
+        Swal.fire({
+          icon: "success",
+          title: "Order saved",
+          text: "Collections have been successfully reordered.",
+          confirmButtonColor: "#181b1c",
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        setIsReordering(false);
+      }
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        text: "An error occurred while saving the order.",
+        confirmButtonColor: "#181b1c",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   if (!collections.length) {
     return (
       <div className="bg-fjord-panel-strong border border-fjord-soft-line rounded-[22px] p-8 text-center">
@@ -35,26 +121,105 @@ export default function CollectionList({ collections }) {
     );
   }
 
+  if (isReordering) {
+    return (
+      <div className="bg-fjord-panel-strong border border-fjord-soft-line rounded-[24px] overflow-hidden shadow-fjord-soft">
+        {/* Top Controls for Reordering */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-b border-fjord-soft-line bg-fjord-bg/20">
+          <div>
+            <h3 className="m-0 text-[15px] font-bold text-fjord-ink">Rearrange Order</h3>
+            <p className="m-0 mt-0.5 text-fjord-muted text-[12px]">Drag and drop collections to rearrange their order on the storefront.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={isSaving}
+              onClick={handleCancel}
+              className="rounded-full px-4 py-2 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold hover:bg-fjord-accent-soft disabled:opacity-40 transition-all text-[12px] active:scale-[0.97] cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              disabled={isSaving}
+              onClick={handleSaveOrder}
+              className="rounded-full px-4 py-2 border border-transparent bg-fjord-accent text-fjord-bg font-semibold hover:bg-opacity-90 disabled:opacity-40 transition-all text-[12px] active:scale-[0.97] cursor-pointer"
+            >
+              {isSaving ? "Saving..." : "Save Order"}
+            </button>
+          </div>
+        </div>
+
+        {/* Drag and drop list */}
+        <div className="p-6 grid gap-2.5 max-w-xl mx-auto py-8">
+          {orderedList.map((collection, index) => (
+            <div
+              key={collection.id}
+              draggable={!isSaving}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+              className={`flex items-center gap-4 p-3 bg-fjord-panel-strong border rounded-2xl select-none transition-all duration-200 ${
+                draggedIndex === index
+                  ? "border-fjord-accent/35 opacity-40 scale-[0.98] shadow-inner"
+                  : "border-fjord-soft-line hover:border-fjord-ink/20 shadow-sm cursor-move"
+              }`}
+            >
+              <GripIcon />
+
+              {collection.imageUrl ? (
+                <img
+                  alt={collection.name}
+                  className="w-10 h-10 rounded-lg object-cover bg-fjord-ink/8 border border-fjord-soft-line flex-shrink-0"
+                  src={collection.imageUrl}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-fjord-ink/8 border border-fjord-soft-line grid place-items-center text-fjord-muted text-[9px] flex-shrink-0">
+                  No image
+                </div>
+              )}
+
+              <div className="flex-1 min-w-0">
+                <span className="font-semibold text-fjord-ink block truncate">{collection.name}</span>
+                <span className="text-fjord-muted text-[11px] font-mono block truncate">/{collection.slug}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-fjord-panel-strong border border-fjord-soft-line rounded-[24px] overflow-hidden shadow-fjord-soft">
       {/* Top Search and Page Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-b border-fjord-soft-line bg-fjord-bg/20">
-        <div className="flex items-center gap-2 text-[13px] text-fjord-muted">
-          <span>Show</span>
-          <select
-            value={rowsPerPage}
-            onChange={(e) => {
-              setRowsPerPage(Number(e.target.value));
-              setCurrentPage(1);
+        <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+          <div className="flex items-center gap-2 text-[13px] text-fjord-muted">
+            <span>Show</span>
+            <select
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-fjord-panel-strong border border-fjord-soft-line rounded-lg px-2.5 py-1 text-fjord-ink font-medium focus:outline-none"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span>entries</span>
+          </div>
+
+          <button
+            onClick={() => {
+              setOrderedList(collections);
+              setIsReordering(true);
             }}
-            className="bg-fjord-panel-strong border border-fjord-soft-line rounded-lg px-2.5 py-1 text-fjord-ink font-medium focus:outline-none"
+            className="rounded-full px-4 py-1.5 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold hover:bg-fjord-accent hover:text-fjord-bg transition-all text-[12px] active:scale-[0.97] cursor-pointer"
           >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-          <span>entries</span>
+            Rearrange Order
+          </button>
         </div>
         <div className="relative w-full sm:w-64">
           <input

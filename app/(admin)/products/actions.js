@@ -7,6 +7,9 @@ import {
   createProduct,
   parseProductPayload,
   updateProduct,
+  updateProductsOrder,
+  toggleProductFavorite,
+  updateFavoriteProductsOrder,
 } from "../../../lib/products";
 
 function buildStatusRedirect(pathname, status, message) {
@@ -62,5 +65,38 @@ export async function updateProductAction(productId, _previousState, formData) {
   } catch (error) {
     unstable_rethrow(error);
     return { error: formatActionError(error) };
+  }
+}
+
+export async function reorderProductsAction(orderedIds) {
+  try {
+    await updateProductsOrder(orderedIds);
+    revalidatePath("/products");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to reorder products:", error);
+    return { error: error instanceof Error ? error.message : "Failed to reorder products." };
+  }
+}
+
+export async function toggleProductFavoriteAction(productId, favoriteStatus) {
+  try {
+    await toggleProductFavorite(productId, favoriteStatus);
+    revalidatePath("/products");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to toggle product favorite:", error);
+    return { error: error instanceof Error ? error.message : "Failed to toggle product favorite." };
+  }
+}
+
+export async function reorderFavoriteProductsAction(orderedIds) {
+  try {
+    await updateFavoriteProductsOrder(orderedIds);
+    revalidatePath("/products");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to reorder favorite products:", error);
+    return { error: error instanceof Error ? error.message : "Failed to reorder favorites." };
   }
 }

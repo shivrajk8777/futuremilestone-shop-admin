@@ -25,6 +25,15 @@ function createDimension() {
   };
 }
 
+function createDetailSection() {
+  return {
+    id: uid("detail"),
+    imageUrl: "",
+    heading: "",
+    content: "",
+  };
+}
+
 function normalizeInitialProduct(product) {
   return {
     imageUrl: product?.imageUrl ?? "",
@@ -49,6 +58,16 @@ function normalizeInitialProduct(product) {
           }))
         : [createDimension()],
     galleryImages: Array.isArray(product?.galleryImages) ? product.galleryImages : [],
+    details:
+      product?.details?.length
+        ? product.details.map((detail) => ({
+            id: detail.id ?? uid("detail"),
+            imageUrl: detail.imageUrl ?? "",
+            heading: detail.heading ?? "",
+            content: detail.content ?? "",
+          }))
+        : [],
+    favorite: product?.favorite ?? false,
   };
 }
 
@@ -152,6 +171,8 @@ export default function ProductForm({
   const [isDraggingMain, setIsDraggingMain] = useState(false);
   const [isDraggingGallery, setIsDraggingGallery] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [detailsUploading, setDetailsUploading] = useState({});
+  const [draggingDetails, setDraggingDetails] = useState({});
 
   const mainInputRef = useRef(null);
   const galleryInputRef = useRef(null);
@@ -164,6 +185,7 @@ export default function ProductForm({
         name: form.name,
         introText: form.introText,
         description: form.description,
+        favorite: form.favorite ?? false,
         materials: form.materials.map((material) => ({
           id: material.id,
           name: material.name,
@@ -175,6 +197,12 @@ export default function ProductForm({
           price: Number(dimension.price) || 0,
         })),
         galleryImages: form.galleryImages,
+        details: form.details.map((detail) => ({
+          id: detail.id,
+          imageUrl: detail.imageUrl,
+          heading: detail.heading,
+          content: detail.content,
+        })),
       }),
     [form],
   );
@@ -219,6 +247,76 @@ export default function ProductForm({
           ? current.dimensions.filter((dimension) => dimension.id !== id)
           : current.dimensions,
     }));
+  }
+
+  function removeDetailSection(id) {
+    setForm((current) => ({
+      ...current,
+      details: current.details.filter((detail) => detail.id !== id),
+    }));
+  }
+
+  function updateDetailField(id, field, value) {
+    setForm((current) => ({
+      ...current,
+      details: current.details.map((detail) =>
+        detail.id === id ? { ...detail, [field]: value } : detail,
+      ),
+    }));
+  }
+
+  async function uploadDetailImageFile(id, file) {
+    if (!file) return;
+
+    setUploadError("");
+    setDetailsUploading((current) => ({ ...current, [id]: true }));
+
+    try {
+      const signResponse = await fetch("/api/cloudinary/sign", {
+        method: "POST",
+      });
+
+      if (!signResponse.ok) {
+        throw new Error("Unable to prepare upload.");
+      }
+
+      const { apiKey, cloudName, folder, signature, timestamp } =
+        await signResponse.json();
+
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      uploadData.append("api_key", apiKey);
+      uploadData.append("folder", folder);
+      uploadData.append("signature", signature);
+      uploadData.append("timestamp", String(timestamp));
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: uploadData,
+        },
+      );
+
+      if (!uploadResponse.ok) {
+        throw new Error("Image upload failed.");
+      }
+
+      const result = await uploadResponse.json();
+
+      setForm((current) => ({
+        ...current,
+        details: current.details.map((detail) =>
+          detail.id === id ? { ...detail, imageUrl: result.secure_url } : detail,
+        ),
+      }));
+    } catch (error) {
+      setUploadError(
+        error instanceof Error ? error.message : "Image upload failed.",
+      );
+    } finally {
+      setDetailsUploading((current) => ({ ...current, [id]: false }));
+    }
   }
 
   async function uploadMainImageFile(file) {
@@ -767,14 +865,186 @@ export default function ProductForm({
         </div>
       </section>
 
+      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+        <div className="flex items-end justify-between gap-4 mb-[18px]">
+          <div>
+            <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">Storytelling Details</h2>
+            <p className="mt-1 mb-0 text-fjord-muted text-[14px]">Add dynamic detailed storytelling sections (alternating images and descriptions).</p>
+          </div>
+          <button
+            className="rounded-full px-[18px] py-3 border border-fjord-line bg-white text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-white active:scale-[0.98] cursor-pointer inline-block text-[14px]"
+            onClick={() =>
+              setForm((current) => ({
+                ...current,
+                details: [...current.details, createDetailSection()],
+              }))
+            }
+            type="button"
+          >
+            Add section
+          </button>
+        </div>
+
+        <div className="grid gap-4">
+          {form.details.map((detail, index) => (
+            <div className="flex flex-col gap-[18px] p-[18px] rounded-[22px] bg-white border border-fjord-soft-line" key={detail.id}>
+              <div className="flex items-center justify-between">
+                <span className="text-[15px] font-bold text-fjord-ink">Section {index + 1}</span>
+                <button
+                  className="p-0 border-0 bg-transparent text-fjord-muted hover:text-fjord-ink cursor-pointer transition text-[14px] font-semibold"
+                  onClick={() => removeDetailSection(detail.id)}
+                  type="button"
+                >
+                  Remove
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid gap-2.5 md:col-span-1">
+                  <label className="text-[14px] font-semibold text-fjord-ink">Section Image</label>
+                  
+                  <label
+                    htmlFor={`detail-image-upload-${detail.id}`}
+                    className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${
+                      draggingDetails[detail.id]
+                        ? "border-fjord-accent bg-fjord-accent/5 scale-[0.99]"
+                        : "border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60"
+                    }`}
+                    onDragOver={handleDragOver}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDraggingDetails((curr) => ({ ...curr, [detail.id]: true }));
+                    }}
+                    onDragLeave={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDraggingDetails((curr) => ({ ...curr, [detail.id]: false }));
+                    }}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDraggingDetails((curr) => ({ ...curr, [detail.id]: false }));
+                      const file = e.dataTransfer.files?.[0];
+                      if (file && file.type.startsWith("image/")) {
+                        await uploadDetailImageFile(detail.id, file);
+                      }
+                    }}
+                  >
+                    <input
+                      accept="image/*"
+                      className="hidden"
+                      disabled={detailsUploading[detail.id]}
+                      id={`detail-image-upload-${detail.id}`}
+                      onChange={async (event) => {
+                        const file = event.target.files?.[0];
+                        if (file) {
+                          await uploadDetailImageFile(detail.id, file);
+                        }
+                        event.target.value = "";
+                      }}
+                      type="file"
+                    />
+                    {detailsUploading[detail.id] ? (
+                      <div className="flex flex-col items-center justify-center gap-3 animate-pulse">
+                        <div className="w-12 h-12 rounded-full bg-fjord-accent/5 flex items-center justify-center text-fjord-accent animate-pulse-ring">
+                          <SpinnerIcon className="w-6 h-6" />
+                        </div>
+                        <span className="text-fjord-ink font-medium text-[13px]">Uploading image...</span>
+                      </div>
+                    ) : detail.imageUrl ? (
+                      <div className="absolute inset-0 w-full h-full group">
+                        <img
+                          alt={detail.heading || "Detail preview"}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          src={detail.imageUrl}
+                        />
+                        <div className="absolute inset-0 bg-fjord-ink/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-[2px]">
+                          <span
+                            className="px-4 py-2 bg-white text-fjord-ink rounded-full text-[13px] font-semibold hover:bg-fjord-accent hover:text-white transition duration-200 shadow-lg transform translate-y-2 group-hover:translate-y-0 duration-300"
+                          >
+                            Change image
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              updateDetailField(detail.id, "imageUrl", "");
+                            }}
+                            className="w-9 h-9 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition duration-200 transform translate-y-2 group-hover:translate-y-0 duration-300 delay-75 inline-flex items-center justify-center border-none"
+                            title="Remove image"
+                          >
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-center gap-3 group">
+                        <div className="w-12 h-12 rounded-2xl bg-fjord-accent-soft text-fjord-accent flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-fjord-accent group-hover:text-white group-hover:shadow-md animate-float">
+                          <CloudUploadIcon className="w-6 h-6" />
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-[14px] font-semibold text-fjord-ink m-0">
+                            Drag & drop image here, or <span className="text-fjord-accent underline font-bold">browse</span>
+                          </p>
+                          <p className="text-[12px] text-fjord-muted m-0">
+                            Supports JPG, PNG, WEBP, GIF
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </label>
+                </div>
+                
+                <div className="grid gap-4 md:col-span-2">
+                  <div className="grid gap-2.5">
+                    <label className="text-[14px] font-semibold" htmlFor={`detail-heading-${detail.id}`}>Heading</label>
+                    <input
+                      id={`detail-heading-${detail.id}`}
+                      onChange={(event) =>
+                        updateDetailField(detail.id, "heading", event.target.value)
+                      }
+                      type="text"
+                      value={detail.heading}
+                      className={inputClass}
+                      placeholder="e.g., Championship Comfort"
+                    />
+                  </div>
+                  
+                  <div className="grid gap-2.5">
+                    <label className="text-[14px] font-semibold" htmlFor={`detail-content-${detail.id}`}>Content</label>
+                    <textarea
+                      id={`detail-content-${detail.id}`}
+                      onChange={(event) =>
+                        updateDetailField(detail.id, "content", event.target.value)
+                      }
+                      rows={4}
+                      value={detail.content}
+                      className={inputClass}
+                      placeholder="e.g., Tested and verified for ultimate posture support..."
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {form.details.length === 0 && (
+            <div className="text-center py-6 border border-dashed border-fjord-line rounded-[22px] bg-white/40">
+              <p className="text-fjord-muted text-[14px] m-0">No dynamic storytelling details added yet. Using default fallback sections.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
       <div className="flex justify-end mt-2">
         <button
           className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-white font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]"
-          disabled={isPending || mainUploading || galleryUploading}
+          disabled={isPending || mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)}
           type="submit"
         >
-          {(isPending || mainUploading || galleryUploading) ? (
-            mainUploading || galleryUploading ? "Uploading..." : "Saving..."
+          {(isPending || mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)) ? (
+            (mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)) ? "Uploading..." : "Saving..."
           ) : (
             submitLabel
           )}

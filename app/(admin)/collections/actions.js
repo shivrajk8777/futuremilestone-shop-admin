@@ -7,6 +7,7 @@ import {
   createCollection,
   parseCollectionPayload,
   updateCollection,
+  updateCollectionsOrder,
 } from "../../../lib/collections";
 
 function buildStatusRedirect(pathname, status, message) {
@@ -62,5 +63,16 @@ export async function updateCollectionAction(collectionId, _previousState, formD
   } catch (error) {
     unstable_rethrow(error);
     return { error: formatActionError(error) };
+  }
+}
+
+export async function reorderCollectionsAction(orderedIds) {
+  try {
+    await updateCollectionsOrder(orderedIds);
+    revalidatePath("/collections");
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to reorder collections:", error);
+    return { error: error instanceof Error ? error.message : "Failed to reorder collections." };
   }
 }

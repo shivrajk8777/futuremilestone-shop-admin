@@ -4,10 +4,12 @@ import {
   StatGrid,
 } from "../../../components/admin/Sections";
 import { listProducts } from "../../../lib/products";
+import { listCollections } from "../../../lib/collections";
 import ProductList from "./ProductList";
 
 export default async function ProductsPage() {
   const products = await listProducts();
+  const collections = await listCollections();
   const totalMaterials = products.reduce(
     (sum, product) => sum + product.materialCount,
     0,
@@ -70,7 +72,7 @@ export default async function ProductsPage() {
         title="Product inventory"
         description="Create and maintain products, their material stock, and dimension-based pricing."
       >
-        <ProductList products={products} />
+        <ProductList products={products} collections={collections} />
       </PageSection>
     </>
   );
