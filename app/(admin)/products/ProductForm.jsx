@@ -41,6 +41,12 @@ function normalizeInitialProduct(product) {
     name: product?.name ?? "",
     introText: product?.introText ?? "",
     description: product?.description ?? "",
+    dimensionsInfo: {
+      material: product?.dimensionsInfo?.material ?? "",
+      finish: product?.dimensionsInfo?.finish ?? "",
+      dimensions: product?.dimensionsInfo?.dimensions ?? "",
+      weight: product?.dimensionsInfo?.weight ?? "",
+    },
     materials:
       product?.materials?.length
         ? product.materials.map((material) => ({
@@ -203,12 +209,28 @@ export default function ProductForm({
           heading: detail.heading,
           content: detail.content,
         })),
+        dimensionsInfo: {
+          material: form.dimensionsInfo.material,
+          finish: form.dimensionsInfo.finish,
+          dimensions: form.dimensionsInfo.dimensions,
+          weight: form.dimensionsInfo.weight,
+        },
       }),
     [form],
   );
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function updateDimensionsInfoField(field, value) {
+    setForm((current) => ({
+      ...current,
+      dimensionsInfo: {
+        ...current.dimensionsInfo,
+        [field]: value,
+      },
+    }));
   }
 
   function updateMaterial(id, field, value) {
@@ -736,6 +758,56 @@ export default function ProductForm({
               value={form.description}
               className={inputClass}
             />
+          </div>
+
+          <div className="grid gap-4 md:col-span-2 border-t border-fjord-soft-line pt-5 mt-2">
+            <h3 className="text-[16px] font-bold text-fjord-ink">Dimensions</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2.5">
+                <label className="text-[14px] font-semibold text-fjord-ink" htmlFor="dim-material">Material</label>
+                <input
+                  id="dim-material"
+                  onChange={(event) => updateDimensionsInfoField("material", event.target.value)}
+                  type="text"
+                  value={form.dimensionsInfo?.material ?? ""}
+                  className={inputClass}
+                  placeholder="e.g. Oak Wood"
+                />
+              </div>
+              <div className="grid gap-2.5">
+                <label className="text-[14px] font-semibold text-fjord-ink" htmlFor="dim-finish">Finish</label>
+                <input
+                  id="dim-finish"
+                  onChange={(event) => updateDimensionsInfoField("finish", event.target.value)}
+                  type="text"
+                  value={form.dimensionsInfo?.finish ?? ""}
+                  className={inputClass}
+                  placeholder="e.g. Matte Polyurethane"
+                />
+              </div>
+              <div className="grid gap-2.5">
+                <label className="text-[14px] font-semibold text-fjord-ink" htmlFor="dim-dimensions">Dimensions</label>
+                <input
+                  id="dim-dimensions"
+                  onChange={(event) => updateDimensionsInfoField("dimensions", event.target.value)}
+                  type="text"
+                  value={form.dimensionsInfo?.dimensions ?? ""}
+                  className={inputClass}
+                  placeholder="e.g. 120cm x 60cm x 75cm"
+                />
+              </div>
+              <div className="grid gap-2.5">
+                <label className="text-[14px] font-semibold text-fjord-ink" htmlFor="dim-weight">Weight</label>
+                <input
+                  id="dim-weight"
+                  onChange={(event) => updateDimensionsInfoField("weight", event.target.value)}
+                  type="text"
+                  value={form.dimensionsInfo?.weight ?? ""}
+                  className={inputClass}
+                  placeholder="e.g. 15 kg"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>

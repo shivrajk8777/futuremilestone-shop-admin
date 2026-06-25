@@ -25,7 +25,7 @@ export default function DashboardPage() {
         actions={[
           { label: "Today", kind: "pill" },
           { label: "Export report", kind: "secondary" },
-          { label: "New product", kind: "primary" },
+          // { label: "New product", kind: "primary" },
         ]}
       />
 
