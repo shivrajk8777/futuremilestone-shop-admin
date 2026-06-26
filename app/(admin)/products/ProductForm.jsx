@@ -50,28 +50,28 @@ function normalizeInitialProduct(product) {
     materials:
       product?.materials?.length
         ? product.materials.map((material) => ({
-            id: material.id ?? uid("material"),
-            name: material.name ?? "",
-            stock: material.stock ?? 0,
-          }))
+          id: material.id ?? uid("material"),
+          name: material.name ?? "",
+          stock: material.stock ?? 0,
+        }))
         : [createMaterial()],
     dimensions:
       product?.dimensions?.length
         ? product.dimensions.map((dimension) => ({
-            id: dimension.id ?? uid("dimension"),
-            label: dimension.label ?? "",
-            price: dimension.price ?? 0,
-          }))
+          id: dimension.id ?? uid("dimension"),
+          label: dimension.label ?? "",
+          price: dimension.price ?? 0,
+        }))
         : [createDimension()],
     galleryImages: Array.isArray(product?.galleryImages) ? product.galleryImages : [],
     details:
       product?.details?.length
         ? product.details.map((detail) => ({
-            id: detail.id ?? uid("detail"),
-            imageUrl: detail.imageUrl ?? "",
-            heading: detail.heading ?? "",
-            content: detail.content ?? "",
-          }))
+          id: detail.id ?? uid("detail"),
+          imageUrl: detail.imageUrl ?? "",
+          heading: detail.heading ?? "",
+          content: detail.content ?? "",
+        }))
         : [],
     favorite: product?.favorite ?? false,
   };
@@ -545,7 +545,7 @@ export default function ProductForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="grid gap-2.5 md:col-span-2">
             <label className="text-[14px] font-semibold text-fjord-ink">Product image</label>
-            
+
             <input
               accept="image/*"
               className="hidden"
@@ -562,11 +562,10 @@ export default function ProductForm({
               onDragLeave={handleDragLeaveMain}
               onDrop={handleDropMain}
               onClick={() => !mainUploading && mainInputRef.current?.click()}
-              className={`relative flex flex-col items-center justify-center min-h-[220px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${
-                isDraggingMain
+              className={`relative flex flex-col items-center justify-center min-h-[220px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${isDraggingMain
                   ? "border-fjord-accent bg-fjord-accent/5 scale-[0.99]"
                   : "border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60"
-              }`}
+                }`}
             >
               {mainUploading ? (
                 <div className="flex flex-col items-center justify-center gap-3 animate-pulse">
@@ -626,7 +625,7 @@ export default function ProductForm({
 
           <div className="grid gap-2.5 md:col-span-2">
             <label className="text-[14px] font-semibold text-fjord-ink">Product gallery images</label>
-            
+
             <input
               accept="image/*"
               className="hidden"
@@ -644,11 +643,10 @@ export default function ProductForm({
               onDragLeave={handleDragLeaveGallery}
               onDrop={handleDropGallery}
               onClick={() => !galleryUploading && galleryInputRef.current?.click()}
-              className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${
-                isDraggingGallery
+              className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${isDraggingGallery
                   ? "border-fjord-accent bg-fjord-accent/5 scale-[0.99]"
                   : "border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60"
-              }`}
+                }`}
             >
               {galleryUploading ? (
                 <div className="flex flex-col items-center justify-center gap-3 animate-pulse">
@@ -686,7 +684,7 @@ export default function ProductForm({
                       alt={`Gallery ${idx + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
-                    
+
                     <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/60 backdrop-blur-md text-white text-[11px] font-medium rounded-full pointer-events-none transition-opacity duration-200 group-hover:opacity-0">
                       {idx + 1}
                     </span>
@@ -760,55 +758,7 @@ export default function ProductForm({
             />
           </div>
 
-          <div className="grid gap-4 md:col-span-2 border-t border-fjord-soft-line pt-5 mt-2">
-            <h3 className="text-[16px] font-bold text-fjord-ink">Dimensions</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-2.5">
-                <label className="text-[14px] font-semibold text-fjord-ink" htmlFor="dim-material">Material</label>
-                <input
-                  id="dim-material"
-                  onChange={(event) => updateDimensionsInfoField("material", event.target.value)}
-                  type="text"
-                  value={form.dimensionsInfo?.material ?? ""}
-                  className={inputClass}
-                  placeholder="e.g. Oak Wood"
-                />
-              </div>
-              <div className="grid gap-2.5">
-                <label className="text-[14px] font-semibold text-fjord-ink" htmlFor="dim-finish">Finish</label>
-                <input
-                  id="dim-finish"
-                  onChange={(event) => updateDimensionsInfoField("finish", event.target.value)}
-                  type="text"
-                  value={form.dimensionsInfo?.finish ?? ""}
-                  className={inputClass}
-                  placeholder="e.g. Matte Polyurethane"
-                />
-              </div>
-              <div className="grid gap-2.5">
-                <label className="text-[14px] font-semibold text-fjord-ink" htmlFor="dim-dimensions">Dimensions</label>
-                <input
-                  id="dim-dimensions"
-                  onChange={(event) => updateDimensionsInfoField("dimensions", event.target.value)}
-                  type="text"
-                  value={form.dimensionsInfo?.dimensions ?? ""}
-                  className={inputClass}
-                  placeholder="e.g. 120cm x 60cm x 75cm"
-                />
-              </div>
-              <div className="grid gap-2.5">
-                <label className="text-[14px] font-semibold text-fjord-ink" htmlFor="dim-weight">Weight</label>
-                <input
-                  id="dim-weight"
-                  onChange={(event) => updateDimensionsInfoField("weight", event.target.value)}
-                  type="text"
-                  value={form.dimensionsInfo?.weight ?? ""}
-                  className={inputClass}
-                  placeholder="e.g. 15 kg"
-                />
-              </div>
-            </div>
-          </div>
+
         </div>
       </section>
 
@@ -974,14 +924,13 @@ export default function ProductForm({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="grid gap-2.5 md:col-span-1">
                   <label className="text-[14px] font-semibold text-fjord-ink">Section Image</label>
-                  
+
                   <label
                     htmlFor={`detail-image-upload-${detail.id}`}
-                    className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${
-                      draggingDetails[detail.id]
+                    className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${draggingDetails[detail.id]
                         ? "border-fjord-accent bg-fjord-accent/5 scale-[0.99]"
                         : "border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60"
-                    }`}
+                      }`}
                     onDragOver={handleDragOver}
                     onDragEnter={(e) => {
                       e.preventDefault();
@@ -1068,7 +1017,7 @@ export default function ProductForm({
                     )}
                   </label>
                 </div>
-                
+
                 <div className="grid gap-4 md:col-span-2">
                   <div className="grid gap-2.5">
                     <label className="text-[14px] font-semibold" htmlFor={`detail-heading-${detail.id}`}>Heading</label>
@@ -1083,7 +1032,7 @@ export default function ProductForm({
                       placeholder="e.g., Championship Comfort"
                     />
                   </div>
-                  
+
                   <div className="grid gap-2.5">
                     <label className="text-[14px] font-semibold" htmlFor={`detail-content-${detail.id}`}>Content</label>
                     <textarea
