@@ -12,6 +12,7 @@ const navigation = [
   { href: "/discounts", label: "Discounts", meta: "Campaigns", icon: "05" },
   { href: "/blogs", label: "Blogs", meta: "Editorial", icon: "06" },
   { href: "/master", label: "Master Settings", meta: "Configuration", icon: "07" },
+  { href: "/chats", label: "Chats", meta: "Support", icon: "08" },
 ];
 
 export default function AdminShell({ admin, children }) {
