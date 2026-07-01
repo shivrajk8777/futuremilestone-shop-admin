@@ -128,10 +128,10 @@ export default function ChatsPage() {
             prev.map((s) =>
               s.userId === activeUserId
                 ? {
-                    ...s,
-                    latestMessage: textToSend,
-                    latestTimestamp: new Date().toISOString(),
-                  }
+                  ...s,
+                  latestMessage: textToSend,
+                  latestTimestamp: new Date().toISOString(),
+                }
                 : s
             )
           );
@@ -172,12 +172,12 @@ export default function ChatsPage() {
       />
 
       <PageSection>
-        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4 h-[600px] bg-fjord-panel border border-fjord-soft-line rounded-[28px] overflow-hidden shadow-fjord-soft">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] h-[600px] bg-fjord-panel border border-fjord-soft-line rounded-[28px] overflow-hidden shadow-fjord-soft">
+
           {/* Left Column: Sessions List */}
-          <div className="border-r border-fjord-soft-line flex flex-col h-full bg-fjord-panel-strong/10">
+          <div className={`border-r border-fjord-soft-line flex flex-col min-h-0 bg-fjord-panel-strong/10 ${activeUserId ? "hidden lg:flex" : "flex"}`}>
             {/* Search */}
-            <div className="p-4 border-b border-fjord-soft-line bg-fjord-panel">
+            <div className="p-4 border-b border-fjord-soft-line bg-fjord-panel flex-shrink-0">
               <div className="relative">
                 <input
                   type="text"
@@ -198,7 +198,7 @@ export default function ChatsPage() {
             </div>
 
             {/* Sessions Scrollable */}
-            <div className="flex-grow overflow-y-auto p-2 space-y-1">
+            <div className="flex-1 min-h-0 overflow-y-auto p-2 space-y-1">
               {loadingSessions && sessions.length === 0 ? (
                 <div className="h-full flex items-center justify-center p-4">
                   <span className="text-xs text-fjord-muted">Loading conversations...</span>
@@ -217,30 +217,27 @@ export default function ChatsPage() {
                     <button
                       key={s.userId}
                       onClick={() => setActiveUserId(s.userId)}
-                      className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 cursor-pointer ${
-                        isActive
+                      className={`w-full text-left p-3.5 rounded-2xl border transition-all flex flex-col gap-1.5 cursor-pointer ${isActive
                           ? "bg-fjord-accent border-transparent text-fjord-bg shadow-md shadow-fjord-accent/10"
                           : "bg-fjord-panel-strong/20 border-transparent text-fjord-ink hover:bg-fjord-panel-strong/40 hover:border-fjord-soft-line/60"
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs font-bold truncate leading-none">
                           {s.userName}
                         </span>
                         <span
-                          className={`text-[9px] font-semibold tracking-wider uppercase leading-none ${
-                            isActive ? "text-fjord-bg/60" : "text-fjord-muted"
-                          }`}
+                          className={`text-[9px] font-semibold tracking-wider uppercase leading-none ${isActive ? "text-fjord-bg/60" : "text-fjord-muted"
+                            }`}
                         >
                           {formatTime(s.latestTimestamp)}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center justify-between gap-3">
                         <p
-                          className={`text-[11px] truncate m-0 flex-grow ${
-                            isActive ? "text-fjord-bg/85" : "text-fjord-muted"
-                          }`}
+                          className={`text-[11px] truncate m-0 flex-grow ${isActive ? "text-fjord-bg/85" : "text-fjord-muted"
+                            }`}
                         >
                           {s.latestMessage}
                         </p>
@@ -258,12 +255,22 @@ export default function ChatsPage() {
           </div>
 
           {/* Right Column: Chat Window */}
-          <div className="flex flex-col h-full bg-fjord-panel">
+          <div className={`flex flex-col min-h-0 bg-fjord-panel ${activeUserId ? "flex" : "hidden lg:flex"}`}>
             {activeUserId ? (
               <>
                 {/* Active Chat Header */}
-                <div className="p-4 border-b border-fjord-soft-line bg-fjord-panel flex items-center justify-between">
-                  <div className="flex flex-col">
+                <div className="p-4 border-b border-fjord-soft-line bg-fjord-panel flex items-center gap-3 flex-shrink-0">
+                  {/* Back button – visible only on mobile */}
+                  <button
+                    onClick={() => setActiveUserId(null)}
+                    className="lg:hidden flex items-center justify-center w-8 h-8 rounded-xl bg-fjord-panel-strong/30 border border-fjord-soft-line text-fjord-ink hover:bg-fjord-panel-strong/50 transition-colors cursor-pointer flex-shrink-0"
+                    aria-label="Back to conversations"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <div className="flex flex-col flex-grow">
                     <span className="text-xs font-bold text-fjord-ink leading-none">
                       {activeSession?.userName || "Loading..."}
                     </span>
@@ -274,7 +281,7 @@ export default function ChatsPage() {
                 </div>
 
                 {/* Messages Body */}
-                <div className="flex-grow p-4 overflow-y-auto space-y-4 scrollbar-thin bg-fjord-panel-strong/5">
+                <div className="flex-1 min-h-0 p-4 overflow-y-auto space-y-4 scrollbar-thin bg-fjord-panel-strong/5">
                   {loadingMessages && messages.length === 0 ? (
                     <div className="h-full flex items-center justify-center">
                       <span className="text-xs text-fjord-muted">Loading messages...</span>
@@ -286,17 +293,15 @@ export default function ChatsPage() {
                         return (
                           <div
                             key={msg.id}
-                            className={`flex flex-col ${
-                              isAdmin ? "items-end" : "items-start"
-                            }`}
+                            className={`flex flex-col ${isAdmin ? "items-end" : "items-start"
+                              }`}
                           >
                             <div className="max-w-[70%] space-y-1">
                               <div
-                                className={`px-4 py-2.5 rounded-2xl text-xs leading-relaxed ${
-                                  isAdmin
+                                className={`px-4 py-2.5 rounded-2xl text-xs leading-relaxed ${isAdmin
                                     ? "bg-fjord-accent text-fjord-bg rounded-tr-none shadow-sm"
                                     : "bg-fjord-panel-strong/60 border border-fjord-soft-line text-fjord-ink rounded-tl-none"
-                                }`}
+                                  }`}
                               >
                                 <p className="m-0 break-words whitespace-pre-wrap">{msg.message}</p>
                               </div>
@@ -315,7 +320,7 @@ export default function ChatsPage() {
                 {/* Message Input Footer */}
                 <form
                   onSubmit={handleSendMessage}
-                  className="p-3 bg-fjord-panel border-t border-fjord-soft-line flex gap-2 items-center"
+                  className="p-3 bg-fjord-panel border-t border-fjord-soft-line flex gap-2 items-center flex-shrink-0"
                 >
                   <input
                     type="text"
