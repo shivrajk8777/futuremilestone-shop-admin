@@ -20,6 +20,7 @@
   --fjord-accent-soft: var(--background-secondary);
   --fjord-warm: #d8ccb7;
   --fjord-success: #2f5a4f;
+  --fjord-input-bg: rgba(255, 255, 255, 0.92);
 }
 
 [data-theme="dark"] {
@@ -42,6 +43,7 @@
   --fjord-accent-soft: var(--background-secondary);
   --fjord-warm: #4a3f2d;
   --fjord-success: #3e7e6e;
+  --fjord-input-bg: rgba(255, 255, 255, 0.06);
 }
 
 @theme {
@@ -56,6 +58,7 @@
   --color-fjord-accent-soft: var(--fjord-accent-soft);
   --color-fjord-warm: var(--fjord-warm);
   --color-fjord-success: var(--fjord-success);
+  --color-fjord-input-bg: var(--fjord-input-bg);
   
   --radius-fjord-lg: 28px;
   --radius-fjord-md: 20px;

@@ -3,7 +3,9 @@ import {
   PageSection,
 } from "../../../../components/admin/Sections";
 import { getOrder } from "../../../../lib/orders";
-import StatusDropdown from "../StatusDropdown";
+import { getDatabase } from "../../../../lib/mongodb";
+import { trackShipment } from "../../../../lib/tracking-providers";
+import OrderActions from "./OrderActions";
 import Link from "next/link";
 
 function formatDate(value) {
@@ -27,6 +29,36 @@ function formatPrice(value) {
 export default async function OrderDetailsPage({ params }) {
   const { orderId } = await params;
   const order = await getOrder(orderId);
+
+  // Retrieve live tracking details server-side if trackingId is present
+  let tracking = null;
+  if (order && order.trackingId) {
+    try {
+      const dispatchEntry = (order.statusTimeline || []).find(
+        (t) => t.status === "Dispatched" || t.status === "Shipped"
+      );
+      const dispatchTime = dispatchEntry ? new Date(dispatchEntry.timestamp) : new Date(order.updatedAt || order.createdAt || Date.now());
+      tracking = await trackShipment(order.deliveryPartnerCode || "", order.trackingId, dispatchTime);
+    } catch (e) {
+      console.error("Failed to load live tracking info for admin page:", e);
+    }
+  }
+
+  // Fetch product IDs for items to link to their detail pages
+  let productMap = {};
+  if (order && order.items && order.items.length > 0) {
+    try {
+      const db = await getDatabase();
+      const itemSlugs = order.items.map((item) => item.slug).filter(Boolean);
+      const products = await db.collection("products").find({ slug: { $in: itemSlugs } }).toArray();
+      productMap = products.reduce((acc, p) => {
+        acc[p.slug] = p._id.toString();
+        return acc;
+      }, {});
+    } catch (e) {
+      console.error("Failed to map products for order details:", e);
+    }
+  }
 
   if (!order) {
     return (
@@ -80,37 +112,46 @@ export default async function OrderDetailsPage({ params }) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-fjord-soft-line/60">
-                    {order.items.map((item) => (
-                      <tr
-                        key={`${item.slug}-${item.material}-${item.dimension}`}
-                        className="hover:bg-fjord-accent/2 transition-colors"
-                      >
-                        <td className="px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            {item.image ? (
-                              <img
-                                alt={item.name}
-                                className="w-9 h-9 rounded-lg object-cover bg-fjord-ink/8 border border-fjord-soft-line flex-shrink-0"
-                                src={item.image}
-                              />
-                            ) : (
-                              <div className="w-9 h-9 rounded-lg bg-fjord-ink/8 border border-fjord-soft-line grid place-items-center text-fjord-muted text-[10px] flex-shrink-0">
-                                No img
-                              </div>
-                            )}
-                            <span className="font-semibold text-fjord-ink line-clamp-1">{item.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-3 text-fjord-muted text-[12px] capitalize">
-                          {item.material} • {item.dimension}
-                        </td>
-                        <td className="px-5 py-3 text-fjord-muted">{formatPrice(item.price)}</td>
-                        <td className="px-5 py-3 text-fjord-ink font-semibold">{item.quantity}</td>
-                        <td className="px-5 py-3 text-right font-semibold text-fjord-ink">
-                          {formatPrice(item.price * item.quantity)}
-                        </td>
-                      </tr>
-                    ))}
+                    {order.items.map((item) => {
+                      const productId = productMap[item.slug];
+                      const productLink = productId ? `/products/${productId}` : "#";
+
+                      return (
+                        <tr
+                          key={`${item.slug}-${item.material}-${item.dimension}`}
+                          className="hover:bg-fjord-accent/2 transition-colors"
+                        >
+                          <td className="px-5 py-3">
+                            <div className="flex items-center gap-3">
+                              {item.image ? (
+                                <Link href={productLink} className="hover:opacity-80 transition-opacity">
+                                  <img
+                                    alt={item.name}
+                                    className="w-9 h-9 rounded-lg object-cover bg-fjord-ink/8 border border-fjord-soft-line flex-shrink-0"
+                                    src={item.image}
+                                  />
+                                </Link>
+                              ) : (
+                                <div className="w-9 h-9 rounded-lg bg-fjord-ink/8 border border-fjord-soft-line grid place-items-center text-fjord-muted text-[10px] flex-shrink-0">
+                                  No img
+                                </div>
+                              )}
+                              <Link href={productLink} className="font-semibold text-fjord-ink line-clamp-1 hover:underline">
+                                {item.name}
+                              </Link>
+                            </div>
+                          </td>
+                          <td className="px-5 py-3 text-fjord-muted text-[12px] capitalize">
+                            {item.material} • {item.dimension}
+                          </td>
+                          <td className="px-5 py-3 text-fjord-muted">{formatPrice(item.price)}</td>
+                          <td className="px-5 py-3 text-fjord-ink font-semibold">{item.quantity}</td>
+                          <td className="px-5 py-3 text-right font-semibold text-fjord-ink">
+                            {formatPrice(item.price * item.quantity)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -120,10 +161,105 @@ export default async function OrderDetailsPage({ params }) {
 
         {/* Right Column: Customer, Shipping, and Payment Summary */}
         <div className="space-y-3">
-          <PageSection title="Fulfillment Status">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-[13px] text-fjord-muted">Current status:</span>
-              <StatusDropdown orderId={order.id} currentStatus={order.status} />
+          <PageSection title="Fulfillment & Actions">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between gap-4 border-b border-fjord-soft-line/60 pb-3">
+                <span className="text-[13px] text-fjord-muted">Current status:</span>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${
+                  order.status === "Delivered"
+                    ? "text-fjord-success bg-fjord-success/12"
+                    : order.status === "Processing" || order.status === "Accepted" || order.status === "Dispatched" || order.status === "Shipped"
+                      ? "text-[#9b6b2b] bg-[#9b6b2b]/12"
+                      : "text-red-600 bg-red-600/12"
+                }`}>
+                  {order.status}
+                </span>
+              </div>
+              
+              {order.trackingId && (
+                <div className="text-[13px] space-y-3.5 border-b border-fjord-soft-line/60 pb-3">
+                  <div className="flex justify-between items-start gap-4">
+                    <div>
+                      <span className="block text-[10px] uppercase font-bold text-fjord-muted">Delivery Partner</span>
+                      <span className="font-semibold text-fjord-ink flex items-center gap-1">
+                        ✈️ {order.deliveryPartnerName || "Standard Shipping"}
+                      </span>
+                    </div>
+                    {tracking && (
+                      <span className={`px-2 py-0.5 rounded-full text-[8.5px] uppercase font-extrabold tracking-wider border ${
+                        tracking.status === "Delivered"
+                          ? "bg-fjord-success/12 text-fjord-success border-fjord-success/20"
+                          : tracking.status === "Out for Delivery"
+                            ? "bg-[#9b6b2b]/12 text-[#9b6b2b] border-[#9b6b2b]/20"
+                            : "bg-fjord-accent-soft text-fjord-ink border-fjord-soft-line"
+                      }`}>
+                        {tracking.status}
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <span className="block text-[10px] uppercase font-bold text-fjord-muted">Tracking ID</span>
+                    <span className="font-mono font-semibold text-fjord-ink select-all">{order.trackingId}</span>
+                  </div>
+
+                  {/* Timeline segment inside admin order view */}
+                  {tracking && tracking.checkpoints && tracking.checkpoints.length > 0 && (
+                    <div className="bg-fjord-panel/80 p-3.5 border border-fjord-soft-line rounded-2xl space-y-3 mt-1.5">
+                      <span className="block text-[9px] uppercase font-bold text-fjord-muted tracking-wider">Live Checkpoint Scans</span>
+                      <div className="relative border-l border-fjord-soft-line pl-3 space-y-3.5 ml-1 py-1 max-h-[220px] overflow-y-auto">
+                        {tracking.checkpoints.map((cp, idx) => {
+                          const isLatest = idx === 0;
+                          return (
+                            <div key={idx} className="relative">
+                              <div className={`absolute -left-[16.5px] top-1.5 w-2 h-2 rounded-full border bg-fjord-panel ${
+                                isLatest ? "border-fjord-accent bg-fjord-accent" : "border-fjord-muted bg-fjord-panel-strong"
+                              }`} />
+                              <div className="text-[11.5px]">
+                                <span className={`font-semibold block ${isLatest ? "text-fjord-ink" : "text-fjord-muted"}`}>{cp.description}</span>
+                                <span className="text-[9.5px] text-fjord-muted block mt-0.5">📍 {cp.location}</span>
+                                <span className="text-[9px] text-fjord-muted/70 block mt-0.5">
+                                  {new Intl.DateTimeFormat("en-IN", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: false
+                                  }).format(new Date(cp.timestamp))}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {tracking.trackingUrl && (
+                        <a
+                          href={tracking.trackingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full text-center block py-2 border border-fjord-soft-line hover:border-fjord-ink/20 hover:bg-fjord-panel rounded-xl text-[11px] font-semibold text-fjord-ink transition-all mt-1"
+                        >
+                          View on DHL Portal ↗
+                        </a>
+                      )}
+                    </div>
+                  )}
+
+                  {order.adminMessage && (
+                    <div>
+                      <span className="block text-[10px] uppercase font-bold text-fjord-muted">Latest Update Msg</span>
+                      <span className="text-fjord-muted italic">"{order.adminMessage}"</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <OrderActions
+                orderId={order.id}
+                orderNumber={order.orderNumber}
+                currentStatus={order.status}
+                customerEmail={order.customerEmail}
+                customerName={order.customerName}
+              />
             </div>
           </PageSection>
 

@@ -32,7 +32,7 @@ function ToolbarBtn({ title, onClick, active, children }) {
       type="button"
       title={title}
       onMouseDown={(e) => { e.preventDefault(); onClick(); }}
-      className={`px-2.5 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer select-none ${active ? 'bg-fjord-accent text-white shadow-sm' : 'text-fjord-ink hover:bg-fjord-accent/10'}`}
+      className={`px-2.5 py-1.5 rounded-lg text-[13px] font-semibold transition-all cursor-pointer select-none ${active ? 'bg-fjord-accent text-fjord-bg shadow-sm' : 'text-fjord-ink hover:bg-fjord-accent/10'}`}
     >
       {children}
     </button>
@@ -69,8 +69,8 @@ export default function BlogForm({ blog, isEdit = false }) {
     if (editorRef.current && form.content) {
       editorRef.current.innerHTML = form.content;
     }
-    // Fetch collections from ecom frontend
-    fetch('http://localhost:3000/api/collections')
+    // Fetch collections from local admin api
+    fetch('/api/collections')
       .then(r => r.json())
       .then(data => {
         if (data.success && data.collections?.length > 0) {
@@ -181,13 +181,13 @@ export default function BlogForm({ blog, isEdit = false }) {
     try {
       let res;
       if (isEdit && blog?.id) {
-        res = await fetch(`http://localhost:3000/api/blogs/${blog.id}`, {
+        res = await fetch(`/api/blogs/${blog.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
       } else {
-        res = await fetch('http://localhost:3000/api/blogs', {
+        res = await fetch('/api/blogs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -206,7 +206,7 @@ export default function BlogForm({ blog, isEdit = false }) {
     }
   }
 
-  const inputClass = 'w-full border border-fjord-ink/10 rounded-[18px] bg-white/92 px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]';
+  const inputClass = 'w-full border border-fjord-ink/10 rounded-[18px] bg-fjord-input-bg px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]';
 
 
   return (
@@ -225,7 +225,7 @@ export default function BlogForm({ blog, isEdit = false }) {
         <button
           type="submit"
           disabled={saving || uploading}
-          className="rounded-full px-6 py-3 bg-fjord-accent text-white font-semibold text-[14px] hover:bg-opacity-90 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
+          className="rounded-full px-6 py-3 bg-fjord-accent text-fjord-bg font-semibold text-[14px] hover:bg-opacity-90 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
         >
           {saving ? <><SpinnerIcon className="h-4 w-4" /> Saving...</> : (isEdit ? 'Update Post' : 'Publish Post')}
         </button>
@@ -239,7 +239,7 @@ export default function BlogForm({ blog, isEdit = false }) {
       )}
 
       {/* ── Cover Image ─────────────────────────────────────────────────── */}
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="mb-[18px]">
           <h2 className="text-[20px] font-bold tracking-[-0.05em]">Cover Image</h2>
           <p className="text-fjord-muted text-[14px] mt-1">Upload a high-quality cover image for the blog post.</p>
@@ -252,7 +252,7 @@ export default function BlogForm({ blog, isEdit = false }) {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => !uploading && imageInputRef.current?.click()}
-          className={`relative flex flex-col items-center justify-center min-h-[220px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${isDragging ? 'border-fjord-accent bg-fjord-accent/5 scale-[0.99]' : 'border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60'}`}
+          className={`relative flex flex-col items-center justify-center min-h-[220px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${isDragging ? 'border-fjord-accent bg-fjord-accent/5 scale-[0.99]' : 'border-fjord-line bg-fjord-panel/40 hover:border-fjord-accent/40 hover:bg-fjord-panel/60'}`}
         >
           {uploading ? (
             <div className="flex flex-col items-center gap-3 animate-pulse">
@@ -279,8 +279,8 @@ export default function BlogForm({ blog, isEdit = false }) {
         </div>
       </section>
 
-      {/* ── Post Details ────────────────────────────────────────────────── */}
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      {/* ── Meta Fields ─────────────────────────────────────────────────── */}
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="mb-[18px]">
           <h2 className="text-[20px] font-bold tracking-[-0.05em]">Post Details</h2>
         </div>
@@ -308,14 +308,14 @@ export default function BlogForm({ blog, isEdit = false }) {
       </section>
 
       {/* ── WYSIWYG Content Editor ──────────────────────────────────────── */}
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="mb-[18px]">
           <h2 className="text-[20px] font-bold tracking-[-0.05em]">Content *</h2>
           <p className="text-fjord-muted text-[14px] mt-1">Write the full blog article. Use the toolbar to format text.</p>
         </div>
 
         {/* Toolbar */}
-        <div className="flex flex-wrap items-center gap-1 p-2 bg-white rounded-[16px] border border-fjord-soft-line mb-3">
+        <div className="flex flex-wrap items-center gap-1 p-2 bg-fjord-panel-strong rounded-[16px] border border-fjord-soft-line mb-3">
           {/* Text style */}
           <ToolbarBtn title="Bold" onClick={() => execCmd('bold')} active={queryCmd('bold')}><strong>B</strong></ToolbarBtn>
           <ToolbarBtn title="Italic" onClick={() => execCmd('italic')} active={queryCmd('italic')}><em>I</em></ToolbarBtn>
@@ -363,7 +363,7 @@ export default function BlogForm({ blog, isEdit = false }) {
           suppressContentEditableWarning
           onInput={syncContent}
           onBlur={syncContent}
-          className="min-h-[320px] rounded-[18px] border border-fjord-ink/10 bg-white/92 px-6 py-5 text-fjord-ink text-[14px] leading-relaxed outline-none focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 transition-all prose prose-sm max-w-none
+          className="min-h-[320px] rounded-[18px] border border-fjord-ink/10 bg-fjord-input-bg px-6 py-5 text-fjord-ink text-[14px] leading-relaxed outline-none focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 transition-all prose prose-sm max-w-none
             [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-5 [&_h2]:mb-2
             [&_h3]:text-lg [&_h3]:font-bold [&_h3]:mt-4 [&_h3]:mb-2
             [&_p]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5

@@ -88,7 +88,7 @@ export default function CollectionForm({
     }
   }
 
-  const inputClass = "w-full border border-fjord-ink/10 rounded-[18px] bg-white/92 px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]";
+  const inputClass = "w-full border border-fjord-ink/10 rounded-[18px] bg-fjord-input-bg px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]";
 
   return (
     <form action={formAction} className="grid gap-3">
@@ -96,7 +96,7 @@ export default function CollectionForm({
       <SwalMessageEffect message={uploadError} type="error" />
       <input name="collectionPayload" type="hidden" value={payload} />
 
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">{title}</h2>
@@ -108,7 +108,7 @@ export default function CollectionForm({
           <div className="grid gap-2.5 md:col-span-2">
             <label className="text-[14px] font-semibold">Collection image</label>
             <div className="flex items-center gap-3 flex-wrap">
-              <label className="w-[52px] h-[52px] rounded-[16px] grid place-items-center bg-fjord-accent text-white cursor-pointer hover:bg-opacity-90 transition" htmlFor="collectionImageUpload">
+              <label className="w-[52px] h-[52px] rounded-[16px] grid place-items-center bg-fjord-accent text-fjord-bg cursor-pointer hover:bg-opacity-90 transition" htmlFor="collectionImageUpload">
                 {getUploadIcon()}
               </label>
               <input
@@ -124,7 +124,7 @@ export default function CollectionForm({
               </span>
             </div>
             {form.imageUrl ? (
-              <div className="mt-2 w-full max-w-[280px] rounded-[22px] overflow-hidden border border-fjord-soft-line bg-white">
+              <div className="mt-2 w-full max-w-[280px] rounded-[22px] overflow-hidden border border-fjord-soft-line bg-fjord-panel-strong">
                 <img alt={form.name || "Collection preview"} className="block w-full h-auto object-cover" src={form.imageUrl} />
               </div>
             ) : null}
@@ -164,7 +164,7 @@ export default function CollectionForm({
       </section>
 
       <div className="flex justify-end mt-2">
-        <button className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-white font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]" disabled={isPending || uploading} type="submit">
+        <button className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-fjord-bg font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]" disabled={isPending || uploading} type="submit">
           {isPending ? "Saving..." : submitLabel}
         </button>
       </div>

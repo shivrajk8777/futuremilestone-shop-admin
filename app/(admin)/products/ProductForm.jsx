@@ -526,7 +526,7 @@ export default function ProductForm({
     }));
   }
 
-  const inputClass = "w-full border border-fjord-ink/10 rounded-[18px] bg-white/92 px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]";
+  const inputClass = "w-full border border-fjord-ink/10 rounded-[18px] bg-fjord-input-bg px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]";
 
   return (
     <form action={formAction} className="grid gap-3">
@@ -534,7 +534,7 @@ export default function ProductForm({
       <SwalMessageEffect message={uploadError} type="error" />
       <input name="productPayload" type="hidden" value={payload} />
 
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">{title}</h2>
@@ -564,7 +564,7 @@ export default function ProductForm({
               onClick={() => !mainUploading && mainInputRef.current?.click()}
               className={`relative flex flex-col items-center justify-center min-h-[220px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${isDraggingMain
                   ? "border-fjord-accent bg-fjord-accent/5 scale-[0.99]"
-                  : "border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60"
+                  : "border-fjord-line bg-fjord-panel/40 hover:border-fjord-accent/40 hover:bg-fjord-panel/60"
                 }`}
             >
               {mainUploading ? (
@@ -588,7 +588,7 @@ export default function ProductForm({
                         e.stopPropagation();
                         mainInputRef.current?.click();
                       }}
-                      className="px-4 py-2 bg-white text-fjord-ink rounded-full text-[13px] font-semibold hover:bg-fjord-accent hover:text-white transition duration-200 shadow-lg transform translate-y-2 group-hover:translate-y-0 duration-300"
+                      className="px-4 py-2 bg-fjord-panel-strong text-fjord-ink rounded-full text-[13px] font-semibold hover:bg-fjord-accent hover:text-fjord-bg transition duration-200 shadow-lg transform translate-y-2 group-hover:translate-y-0 duration-300"
                     >
                       Change image
                     </button>
@@ -645,7 +645,7 @@ export default function ProductForm({
               onClick={() => !galleryUploading && galleryInputRef.current?.click()}
               className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${isDraggingGallery
                   ? "border-fjord-accent bg-fjord-accent/5 scale-[0.99]"
-                  : "border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60"
+                  : "border-fjord-line bg-fjord-panel/40 hover:border-fjord-accent/40 hover:bg-fjord-panel/60"
                 }`}
             >
               {galleryUploading ? (
@@ -762,14 +762,14 @@ export default function ProductForm({
         </div>
       </section>
 
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">Materials</h2>
             <p className="mt-1 mb-0 text-fjord-muted text-[14px]">Add one or more materials and keep stock per material.</p>
           </div>
           <button
-            className="rounded-full px-[18px] py-3 border border-fjord-line bg-white text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-white active:scale-[0.98] cursor-pointer inline-block text-[14px]"
+            className="rounded-full px-[18px] py-3 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-fjord-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
             onClick={() =>
               setForm((current) => ({
                 ...current,
@@ -784,7 +784,7 @@ export default function ProductForm({
 
         <div className="grid gap-3">
           {form.materials.map((material, index) => (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-white border border-fjord-soft-line" key={material.id}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-fjord-panel-strong border border-fjord-soft-line" key={material.id}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                 <div className="grid gap-2.5">
                   <label className="text-[14px] font-semibold" htmlFor={`material-name-${material.id}`}>Material {index + 1}</label>
@@ -824,14 +824,14 @@ export default function ProductForm({
         </div>
       </section>
 
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">Dimensions and pricing</h2>
             <p className="mt-1 mb-0 text-fjord-muted text-[14px]">Each dimension entry carries its own selling price.</p>
           </div>
           <button
-            className="rounded-full px-[18px] py-3 border border-fjord-line bg-white text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-white active:scale-[0.98] cursor-pointer inline-block text-[14px]"
+            className="rounded-full px-[18px] py-3 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-fjord-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
             onClick={() =>
               setForm((current) => ({
                 ...current,
@@ -846,7 +846,7 @@ export default function ProductForm({
 
         <div className="grid gap-3">
           {form.dimensions.map((dimension, index) => (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-white border border-fjord-soft-line" key={dimension.id}>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-fjord-panel-strong border border-fjord-soft-line" key={dimension.id}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                 <div className="grid gap-2.5">
                   <label className="text-[14px] font-semibold" htmlFor={`dimension-label-${dimension.id}`}>Dimension {index + 1}</label>
@@ -887,14 +887,14 @@ export default function ProductForm({
         </div>
       </section>
 
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">Storytelling Details</h2>
             <p className="mt-1 mb-0 text-fjord-muted text-[14px]">Add dynamic detailed storytelling sections (alternating images and descriptions).</p>
           </div>
           <button
-            className="rounded-full px-[18px] py-3 border border-fjord-line bg-white text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-white active:scale-[0.98] cursor-pointer inline-block text-[14px]"
+            className="rounded-full px-[18px] py-3 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-fjord-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
             onClick={() =>
               setForm((current) => ({
                 ...current,
@@ -909,7 +909,7 @@ export default function ProductForm({
 
         <div className="grid gap-4">
           {form.details.map((detail, index) => (
-            <div className="flex flex-col gap-[18px] p-[18px] rounded-[22px] bg-white border border-fjord-soft-line" key={detail.id}>
+            <div className="flex flex-col gap-[18px] p-[18px] rounded-[22px] bg-fjord-panel-strong border border-fjord-soft-line" key={detail.id}>
               <div className="flex items-center justify-between">
                 <span className="text-[15px] font-bold text-fjord-ink">Section {index + 1}</span>
                 <button
@@ -929,7 +929,7 @@ export default function ProductForm({
                     htmlFor={`detail-image-upload-${detail.id}`}
                     className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${draggingDetails[detail.id]
                         ? "border-fjord-accent bg-fjord-accent/5 scale-[0.99]"
-                        : "border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60"
+                        : "border-fjord-line bg-fjord-panel/40 hover:border-fjord-accent/40 hover:bg-fjord-panel/60"
                       }`}
                     onDragOver={handleDragOver}
                     onDragEnter={(e) => {
@@ -982,7 +982,7 @@ export default function ProductForm({
                         />
                         <div className="absolute inset-0 bg-fjord-ink/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-[2px]">
                           <span
-                            className="px-4 py-2 bg-white text-fjord-ink rounded-full text-[13px] font-semibold hover:bg-fjord-accent hover:text-white transition duration-200 shadow-lg transform translate-y-2 group-hover:translate-y-0 duration-300"
+                            className="px-4 py-2 bg-fjord-panel-strong text-fjord-ink rounded-full text-[13px] font-semibold hover:bg-fjord-accent hover:text-fjord-bg transition duration-200 shadow-lg transform translate-y-2 group-hover:translate-y-0 duration-300"
                           >
                             Change image
                           </span>
@@ -1051,7 +1051,7 @@ export default function ProductForm({
             </div>
           ))}
           {form.details.length === 0 && (
-            <div className="text-center py-6 border border-dashed border-fjord-line rounded-[22px] bg-white/40">
+            <div className="text-center py-6 border border-dashed border-fjord-line rounded-[22px] bg-fjord-panel/40">
               <p className="text-fjord-muted text-[14px] m-0">No dynamic storytelling details added yet. Using default fallback sections.</p>
             </div>
           )}
@@ -1060,7 +1060,7 @@ export default function ProductForm({
 
       <div className="flex justify-end mt-2">
         <button
-          className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-white font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]"
+          className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-fjord-bg font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]"
           disabled={isPending || mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)}
           type="submit"
         >

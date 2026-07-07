@@ -22,7 +22,7 @@ export default function LoginForm() {
           name="email"
           required
           type="email"
-          className="w-full border border-fjord-ink/10 rounded-[18px] bg-white/92 px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6"
+          className="w-full border border-fjord-ink/10 rounded-[18px] bg-fjord-input-bg px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6"
         />
       </div>
 
@@ -34,11 +34,11 @@ export default function LoginForm() {
           name="password"
           required
           type="password"
-          className="w-full border border-fjord-ink/10 rounded-[18px] bg-white/92 px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6"
+          className="w-full border border-fjord-ink/10 rounded-[18px] bg-fjord-input-bg px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6"
         />
       </div>
 
-      <button className="w-full flex justify-center items-center rounded-full px-[18px] py-3 border border-transparent bg-fjord-accent text-white font-semibold transition hover:bg-opacity-90 active:scale-[0.98] disabled:opacity-50 cursor-pointer" disabled={isPending} type="submit">
+      <button className="w-full flex justify-center items-center rounded-full px-[18px] py-3 border border-transparent bg-fjord-accent text-fjord-bg font-semibold transition hover:bg-opacity-90 active:scale-[0.98] disabled:opacity-50 cursor-pointer" disabled={isPending} type="submit">
         {isPending ? "Signing in..." : "Sign in"}
       </button>
     </form>

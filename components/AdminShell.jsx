@@ -11,6 +11,7 @@ const navigation = [
   { href: "/orders", label: "Orders", meta: "Fulfillment", icon: "04" },
   { href: "/discounts", label: "Discounts", meta: "Campaigns", icon: "05" },
   { href: "/blogs", label: "Blogs", meta: "Editorial", icon: "06" },
+  { href: "/delivery-partners", label: "Delivery Partners", meta: "Shipping", icon: "09" },
   { href: "/master", label: "Master Settings", meta: "Configuration", icon: "07" },
   { href: "/chats", label: "Chats", meta: "Support", icon: "08" },
 ];

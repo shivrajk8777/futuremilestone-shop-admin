@@ -227,7 +227,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
   }
 
   const inputClass =
-    "w-full border border-fjord-ink/10 rounded-[18px] bg-white/92 px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]";
+    "w-full border border-fjord-ink/10 rounded-[18px] bg-fjord-input-bg px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]";
 
   return (
     <form action={formAction} className="grid gap-4">
@@ -245,7 +245,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
       />
 
       {/* Section 1: Marquee Settings */}
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="mt-1 mb-0 text-[22px] font-bold tracking-[-0.04em]">
@@ -263,7 +263,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
             }`}
           >
             <span
-              className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-fjord-panel-strong shadow ring-0 transition duration-200 ease-in-out ${
                 form.marqueeVisible ? "translate-x-5.5" : "translate-x-0"
               }`}
             />
@@ -288,7 +288,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
       </section>
 
       {/* Section 2: Carousel Settings */}
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="mt-1 mb-0 text-[22px] font-bold tracking-[-0.04em]">
@@ -306,7 +306,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
             }`}
           >
             <span
-              className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-fjord-panel-strong shadow ring-0 transition duration-200 ease-in-out ${
                 form.carouselVisible ? "translate-x-5.5" : "translate-x-0"
               }`}
             />
@@ -321,7 +321,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
                 <button
                   type="button"
                   onClick={addSlide}
-                  className="rounded-full px-[14px] py-1.5 border border-fjord-line bg-white text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-white active:scale-[0.98] cursor-pointer inline-block text-[12px]"
+                  className="rounded-full px-[14px] py-1.5 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold text-center transition hover:bg-fjord-accent hover:text-fjord-bg active:scale-[0.98] cursor-pointer inline-block text-[12px]"
                 >
                   Add Slide
                 </button>
@@ -334,7 +334,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
                   return (
                     <div
                       key={idx}
-                      className="p-4 bg-white/50 border border-fjord-ink/5 rounded-[24px] grid grid-cols-1 lg:grid-cols-12 gap-4 relative"
+                      className="p-4 bg-fjord-panel/50 border border-fjord-soft-line rounded-[24px] grid grid-cols-1 lg:grid-cols-12 gap-4 relative"
                     >
                       <div className="lg:col-span-12 flex items-center justify-between border-b border-fjord-ink/5 pb-2 mb-1">
                         <span className="text-[13px] font-bold text-fjord-ink">Slide {idx + 1}</span>
@@ -363,7 +363,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
                           className={`relative flex flex-col items-center justify-center min-h-[160px] aspect-[2/1] rounded-[18px] border-2 border-dashed p-4 transition-all duration-300 cursor-pointer overflow-hidden ${
                             isDragging
                               ? "border-fjord-accent bg-fjord-accent/5 scale-[0.99]"
-                              : "border-fjord-line bg-white/40 hover:border-fjord-accent/40 hover:bg-white/60"
+                              : "border-fjord-line bg-fjord-panel/40 hover:border-fjord-accent/40 hover:bg-fjord-panel/60"
                           }`}
                         >
                           {isUploading ? (
@@ -387,7 +387,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
                                     e.stopPropagation();
                                     triggerUpload(idx);
                                   }}
-                                  className="px-3 py-1.5 bg-white text-fjord-ink rounded-full text-[12px] font-semibold hover:bg-fjord-accent hover:text-white transition duration-200 shadow-md"
+                                  className="px-3 py-1.5 bg-fjord-panel-strong text-fjord-ink rounded-full text-[12px] font-semibold hover:bg-fjord-accent hover:text-fjord-bg transition duration-200 shadow-md"
                                 >
                                   Change image
                                 </button>
@@ -485,7 +485,7 @@ export default function MasterSettingsForm({ initialSettings, action }) {
       {/* Submit Button */}
       <div className="flex justify-end mt-2">
         <button
-          className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-white font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]"
+          className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-fjord-bg font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]"
           disabled={isPending || Object.values(uploadingIndices).some(Boolean)}
           type="submit"
         >

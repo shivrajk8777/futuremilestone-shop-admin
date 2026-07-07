@@ -11,7 +11,7 @@ export default function EditBlogPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch(`http://localhost:3000/api/blogs/${id}`)
+    fetch(`/api/blogs/${id}`)
       .then(r => r.json())
       .then(data => {
         if (data.success) setBlog(data.blog);

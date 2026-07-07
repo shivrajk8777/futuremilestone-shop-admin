@@ -75,14 +75,14 @@ export default function DiscountForm({
     p.name?.toLowerCase().includes(productSearch.toLowerCase())
   );
 
-  const inputClass = "w-full border border-fjord-ink/10 rounded-[18px] bg-white/92 px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]";
+  const inputClass = "w-full border border-fjord-ink/10 rounded-[18px] bg-fjord-input-bg px-[18px] py-4 text-fjord-ink outline-none transition-all duration-[160ms] focus:border-fjord-ink/25 focus:ring-4 focus:ring-fjord-ink/6 text-[14px]";
 
   return (
     <form action={formAction} className="grid gap-3">
       <SwalMessageEffect message={state?.error} type="error" />
       <input name="discountPayload" type="hidden" value={payload} />
 
-      <section className="p-[18px] sm:p-[22px] bg-white/72 border border-white/72 backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">{title}</h2>
@@ -106,7 +106,7 @@ export default function DiscountForm({
 
           <div className="grid gap-2.5">
             <label className="text-[14px] font-semibold" htmlFor="active">Active Status</label>
-            <div className="flex items-center gap-3 h-[54px] border border-fjord-ink/10 rounded-[18px] bg-white/92 px-[18px] select-none">
+            <div className="flex items-center gap-3 h-[54px] border border-fjord-ink/10 rounded-[18px] bg-fjord-input-bg px-[18px] select-none">
               <input
                 id="active"
                 onChange={(event) => updateField("active", event.target.checked)}
@@ -165,14 +165,14 @@ export default function DiscountForm({
           </div>
 
           {form.scope === "category" && (
-            <div className="grid gap-2.5 md:col-span-2 bg-white/40 border border-fjord-soft-line rounded-[22px] p-4">
+            <div className="grid gap-2.5 md:col-span-2 bg-fjord-panel/40 border border-fjord-soft-line rounded-[22px] p-4">
               <label className="text-[14px] font-semibold">Select Collections ({form.collectionIds.length} selected)</label>
               <input
                 type="text"
                 placeholder="Search collections..."
                 value={collectionSearch}
                 onChange={(e) => setCollectionSearch(e.target.value)}
-                className="w-full border border-fjord-ink/10 rounded-full px-4 py-2 bg-white/80 outline-none text-[13px]"
+                className="w-full border border-fjord-ink/10 rounded-full px-4 py-2 bg-fjord-panel-strong outline-none text-[13px]"
               />
               <div className="max-h-60 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 p-1">
                 {filteredCollections.length === 0 ? (
@@ -186,7 +186,7 @@ export default function DiscountForm({
                         className={`flex items-center gap-3 p-3 rounded-[14px] border cursor-pointer select-none transition-all ${
                           isChecked
                             ? "bg-fjord-accent-soft/20 border-fjord-accent/30 text-fjord-ink"
-                            : "bg-white/50 border-fjord-soft-line hover:bg-white/80 text-fjord-muted"
+                            : "bg-fjord-panel-strong border border-fjord-soft-line hover:bg-fjord-accent-soft text-fjord-muted"
                         }`}
                       >
                         <input
@@ -205,14 +205,14 @@ export default function DiscountForm({
           )}
 
           {form.scope === "products" && (
-            <div className="grid gap-2.5 md:col-span-2 bg-white/40 border border-fjord-soft-line rounded-[22px] p-4">
+            <div className="grid gap-2.5 md:col-span-2 bg-fjord-panel/40 border border-fjord-soft-line rounded-[22px] p-4">
               <label className="text-[14px] font-semibold">Select Products ({form.productIds.length} selected)</label>
               <input
                 type="text"
                 placeholder="Search products..."
                 value={productSearch}
                 onChange={(e) => setProductSearch(e.target.value)}
-                className="w-full border border-fjord-ink/10 rounded-full px-4 py-2 bg-white/80 outline-none text-[13px]"
+                className="w-full border border-fjord-ink/10 rounded-full px-4 py-2 bg-fjord-panel-strong outline-none text-[13px]"
               />
               <div className="max-h-60 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 p-1">
                 {filteredProducts.length === 0 ? (
@@ -226,7 +226,7 @@ export default function DiscountForm({
                         className={`flex items-center gap-3 p-3 rounded-[14px] border cursor-pointer select-none transition-all ${
                           isChecked
                             ? "bg-fjord-accent-soft/20 border-fjord-accent/30 text-fjord-ink"
-                            : "bg-white/50 border-fjord-soft-line hover:bg-white/80 text-fjord-muted"
+                            : "bg-fjord-panel-strong border border-fjord-soft-line hover:bg-fjord-accent-soft text-fjord-muted"
                         }`}
                       >
                         <input
@@ -248,11 +248,7 @@ export default function DiscountForm({
       </section>
 
       <div className="flex justify-end mt-2">
-        <button
-          className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-white font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]"
-          disabled={isPending}
-          type="submit"
-        >
+        <button className="rounded-full px-6 py-3 border border-transparent bg-fjord-accent text-fjord-bg font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]" disabled={isPending} type="submit">
           {isPending ? "Saving..." : submitLabel}
         </button>
       </div>

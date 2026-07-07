@@ -13,7 +13,7 @@ export default function BlogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    fetch('http://localhost:3000/api/blogs')
+    fetch('/api/blogs')
       .then(r => r.json())
       .then(data => {
         if (data.success) setBlogs(data.blogs);
@@ -25,7 +25,7 @@ export default function BlogsPage() {
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return;
     setDeleting(id);
     try {
-      await fetch(`http://localhost:3000/api/blogs/${id}`, { method: 'DELETE' });
+      await fetch(`/api/blogs/${id}`, { method: 'DELETE' });
       setBlogs(prev => prev.filter(b => b.id !== id));
     } finally {
       setDeleting(null);
