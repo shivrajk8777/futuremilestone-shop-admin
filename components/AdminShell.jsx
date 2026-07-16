@@ -11,9 +11,11 @@ const navigation = [
   { href: "/orders", label: "Orders", meta: "Fulfillment", icon: "04" },
   { href: "/discounts", label: "Discounts", meta: "Campaigns", icon: "05" },
   { href: "/blogs", label: "Blogs", meta: "Editorial", icon: "06" },
+  { href: "/contacts", label: "Contacts", meta: "Inquiries", icon: "07" },
+  { href: "/team", label: "Team Members", meta: "About Us", icon: "08" },
   { href: "/delivery-partners", label: "Delivery Partners", meta: "Shipping", icon: "09" },
-  { href: "/master", label: "Master Settings", meta: "Configuration", icon: "07" },
-  { href: "/chats", label: "Chats", meta: "Support", icon: "08" },
+  { href: "/master", label: "Master Settings", meta: "Configuration", icon: "10" },
+  { href: "/chats", label: "Chats", meta: "Support", icon: "11" },
 ];
 
 export default function AdminShell({ admin, children }) {

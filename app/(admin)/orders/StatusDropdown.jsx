@@ -25,16 +25,19 @@ export default function StatusDropdown({ orderId, currentStatus }) {
         className={`w-full appearance-none rounded-full px-4 py-2 text-[13px] font-semibold bg-fjord-ink/6 border-none focus:outline-none focus:ring-1 focus:ring-fjord-accent transition cursor-pointer pr-8 ${
           currentStatus === "Delivered"
             ? "text-fjord-success bg-fjord-success/12"
-            : currentStatus === "Processing" || currentStatus === "Shipped"
+            : ["Processing", "Accepted", "Dispatched", "Shipped"].includes(currentStatus)
               ? "text-[#9b6b2b] bg-[#9b6b2b]/12"
-              : currentStatus === "Refunded"
+              : ["Cancelled", "Refunded"].includes(currentStatus)
                 ? "text-red-600 bg-red-600/12"
                 : "text-fjord-ink"
         }`}
       >
         <option value="Processing">Processing</option>
+        <option value="Accepted">Accepted</option>
+        <option value="Dispatched">Dispatched</option>
         <option value="Shipped">Shipped</option>
         <option value="Delivered">Delivered</option>
+        <option value="Cancelled">Cancelled</option>
         <option value="Refunded">Refunded</option>
       </select>
       <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-fjord-muted">

@@ -6,6 +6,7 @@ import { getOrder } from "../../../../lib/orders";
 import { getDatabase } from "../../../../lib/mongodb";
 import { trackShipment } from "../../../../lib/tracking-providers";
 import OrderActions from "./OrderActions";
+import StatusDropdown from "../StatusDropdown";
 import Link from "next/link";
 
 function formatDate(value) {
@@ -165,15 +166,7 @@ export default async function OrderDetailsPage({ params }) {
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-4 border-b border-fjord-soft-line/60 pb-3">
                 <span className="text-[13px] text-fjord-muted">Current status:</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase font-bold ${
-                  order.status === "Delivered"
-                    ? "text-fjord-success bg-fjord-success/12"
-                    : order.status === "Processing" || order.status === "Accepted" || order.status === "Dispatched" || order.status === "Shipped"
-                      ? "text-[#9b6b2b] bg-[#9b6b2b]/12"
-                      : "text-red-600 bg-red-600/12"
-                }`}>
-                  {order.status}
-                </span>
+                <StatusDropdown orderId={order.id} currentStatus={order.status} />
               </div>
               
               {order.trackingId && (

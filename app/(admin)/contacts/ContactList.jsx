@@ -13,48 +13,47 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
-function formatPrice(value) {
-  return new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(value);
+function truncateMessage(message, length = 70) {
+  if (!message) return "";
+  if (message.length <= length) return message;
+  return message.slice(0, length) + "...";
 }
 
-export default function OrderList({ orders }) {
+export default function ContactList({ contacts }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [filterDate, setFilterDate] = useState("");
 
-  const filteredOrders = orders.filter((o) => {
+  const filteredContacts = contacts.filter((c) => {
     // 1. Search Query filter
     const matchesSearch =
       searchQuery === "" ||
-      o.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.customerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.customerEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.status?.toLowerCase().includes(searchQuery.toLowerCase());
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.message?.toLowerCase().includes(searchQuery.toLowerCase());
 
     // 2. Status filter
+    const hasReplies = c.replies && c.replies.length > 0;
     const matchesStatus =
       statusFilter === "All" ||
-      o.status?.toLowerCase() === statusFilter.toLowerCase();
+      (statusFilter === "Replied" && hasReplies) ||
+      (statusFilter === "Pending" && !hasReplies);
 
     // 3. Date filter (match exact local calendar day)
     let matchesDate = true;
     if (filterDate) {
-      if (!o.createdAt) {
+      if (!c.createdAt) {
         matchesDate = false;
       } else {
-        const orderTime = new Date(o.createdAt).getTime();
+        const itemTime = new Date(c.createdAt).getTime();
 
         const [yr, mo, dy] = filterDate.split("-").map(Number);
         const start = new Date(yr, mo - 1, dy, 0, 0, 0, 0).getTime();
         const end = new Date(yr, mo - 1, dy, 23, 59, 59, 999).getTime();
 
-        if (orderTime < start || orderTime > end) {
+        if (itemTime < start || itemTime > end) {
           matchesDate = false;
         }
       }
@@ -63,15 +62,15 @@ export default function OrderList({ orders }) {
     return matchesSearch && matchesStatus && matchesDate;
   });
 
-  const totalPages = Math.ceil(filteredOrders.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredContacts.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const paginatedOrders = filteredOrders.slice(startIndex, startIndex + rowsPerPage);
+  const paginatedContacts = filteredContacts.slice(startIndex, startIndex + rowsPerPage);
 
-  if (!orders.length) {
+  if (!contacts.length) {
     return (
       <div className="bg-fjord-panel-strong border border-fjord-soft-line rounded-[22px] p-8 text-center">
-        <h3 className="m-0 text-[18px] font-bold">No orders yet</h3>
-        <p className="mt-1 text-fjord-muted text-[13px]">Order records will appear here after customers begin placing purchases.</p>
+        <h3 className="m-0 text-[18px] font-bold">No inquiries yet</h3>
+        <p className="mt-1 text-fjord-muted text-[13px]">Customer messages submitted through the shop contact form will appear here.</p>
       </div>
     );
   }
@@ -110,13 +109,11 @@ export default function OrderList({ orders }) {
                 setStatusFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="bg-fjord-panel-strong border border-fjord-soft-line rounded-lg px-3 py-1.5 text-fjord-ink font-medium focus:outline-none min-w-[120px]"
+              className="bg-fjord-panel-strong border border-fjord-soft-line rounded-lg px-3 py-1.5 text-fjord-ink font-medium focus:outline-none min-w-[140px]"
             >
               <option value="All">All Statuses</option>
-              <option value="Processing">Processing</option>
-              <option value="Shipped">Shipped</option>
-              <option value="Delivered">Delivered</option>
-              <option value="Refunded">Refunded</option>
+              <option value="Pending">Pending Reply</option>
+              <option value="Replied">Replied</option>
             </select>
           </div>
 
@@ -153,7 +150,7 @@ export default function OrderList({ orders }) {
           <div className="relative w-full sm:w-48 lg:w-64">
             <input
               type="text"
-              placeholder="Search orders..."
+              placeholder="Search inquiries..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
@@ -173,60 +170,56 @@ export default function OrderList({ orders }) {
         <table className="w-full border-collapse text-left text-[13px]">
           <thead>
             <tr className="border-b border-fjord-soft-line bg-fjord-bg/10 text-fjord-muted uppercase tracking-wider text-[11px] font-semibold">
-              <th className="px-5 py-3">Order Number</th>
-              <th className="px-5 py-3">Date</th>
               <th className="px-5 py-3">Customer</th>
-              <th className="px-5 py-3">Items</th>
-              <th className="px-5 py-3">Total</th>
+              <th className="px-5 py-3">Date</th>
+              <th className="px-5 py-3">Message Preview</th>
               <th className="px-5 py-3">Status</th>
               <th className="px-5 py-3 text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-fjord-soft-line/60">
-            {paginatedOrders.length === 0 ? (
+            {paginatedContacts.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-5 py-8 text-center text-fjord-muted">
-                  No matching orders found.
+                <td colSpan={5} className="px-5 py-8 text-center text-fjord-muted">
+                  No matching inquiries found.
                 </td>
               </tr>
             ) : (
-              paginatedOrders.map((order) => {
-                const totalItems = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+              paginatedContacts.map((contact) => {
+                const hasReplies = contact.replies && contact.replies.length > 0;
                 return (
-                  <tr key={order.id} className="hover:bg-fjord-accent/2 transition-colors animate-fade-in">
-                    <td className="px-5 py-3 font-semibold text-fjord-ink">{order.orderNumber}</td>
-                    <td className="px-5 py-3 text-fjord-muted">{formatDate(order.createdAt)}</td>
-                    <td className="px-5 py-3">
+                  <tr key={contact.id} className="hover:bg-fjord-accent/2 transition-colors animate-fade-in">
+                    <td className="px-5 py-3 font-semibold text-fjord-ink">
                       <div className="space-y-0.5">
-                        <span className="font-semibold block text-fjord-ink">{order.customerName}</span>
-                        <span className="text-fjord-muted text-[11px] block">{order.customerEmail}</span>
+                        <span className="font-semibold block text-fjord-ink">{contact.name}</span>
+                        <a
+                          href={`mailto:${contact.email}`}
+                          className="text-fjord-muted hover:text-fjord-accent hover:underline text-[11px] block transition-colors duration-150"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {contact.email}
+                        </a>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-fjord-muted">
-                      {totalItems} {totalItems === 1 ? "item" : "items"}
-                    </td>
-                    <td className="px-5 py-3 font-semibold text-fjord-ink">
-                      {formatPrice(order.total)}
+                    <td className="px-5 py-3 text-fjord-muted">{formatDate(contact.createdAt)}</td>
+                    <td className="px-5 py-3 text-fjord-ink/90 font-medium">
+                      {truncateMessage(contact.message)}
                     </td>
                     <td className="px-5 py-3">
                       <span className={`inline-block rounded-full px-3.5 py-1.5 text-[12px] font-semibold ${
-                        order.status === "Delivered"
+                        hasReplies
                           ? "text-fjord-success bg-fjord-success/12"
-                          : ["Processing", "Accepted", "Dispatched", "Shipped"].includes(order.status)
-                            ? "text-[#9b6b2b] bg-[#9b6b2b]/12"
-                            : ["Cancelled", "Refunded"].includes(order.status)
-                              ? "text-red-600 bg-red-600/12"
-                              : "text-fjord-ink bg-fjord-ink/6"
+                          : "text-[#9b6b2b] bg-[#9b6b2b]/12"
                       }`}>
-                        {order.status}
+                        {hasReplies ? "Replied" : "Pending Reply"}
                       </span>
                     </td>
                     <td className="px-5 py-3 text-right">
                       <Link
                         className="inline-block rounded-full px-3.5 py-1.5 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold hover:bg-fjord-accent hover:text-fjord-bg hover:border-fjord-accent transition-all text-[12px] active:scale-[0.97]"
-                        href={`/orders/${order.id}`}
+                        href={`/contacts/${contact.id}`}
                       >
-                        View Details
+                        View & Reply
                       </Link>
                     </td>
                   </tr>
@@ -240,8 +233,8 @@ export default function OrderList({ orders }) {
       {/* Pagination Footer */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-fjord-soft-line bg-fjord-bg/10 text-[13px] text-fjord-muted">
         <div>
-          Showing {filteredOrders.length === 0 ? 0 : startIndex + 1} to{" "}
-          {Math.min(startIndex + rowsPerPage, filteredOrders.length)} of {filteredOrders.length} entries
+          Showing {filteredContacts.length === 0 ? 0 : startIndex + 1} to{" "}
+          {Math.min(startIndex + rowsPerPage, filteredContacts.length)} of {filteredContacts.length} entries
         </div>
         <div className="flex items-center gap-1.5">
           <button
