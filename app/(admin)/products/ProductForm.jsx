@@ -861,7 +861,7 @@ export default function ProductForm({
                   />
                 </div>
                 <div className="grid gap-2.5">
-                  <label className="text-[14px] font-semibold" htmlFor={`dimension-price-${dimension.id}`}>Price</label>
+                  <label className="text-[14px] font-semibold" htmlFor={`dimension-price-${dimension.id}`}>Price ($ USD)</label>
                   <input
                     id={`dimension-price-${dimension.id}`}
                     min="0"

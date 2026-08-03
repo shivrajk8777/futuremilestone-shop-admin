@@ -14,9 +14,9 @@ function formatDate(value) {
 }
 
 function formatPrice(value) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "INR",
+    currency: "USD",
     maximumFractionDigits: 0,
   }).format(value);
 }
@@ -71,12 +71,20 @@ export default async function OrderChallanPage({ params }) {
         {/* Brand Header */}
         <div className="flex justify-between items-start gap-6 border-b-2 border-gray-800 pb-6 mb-8">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight uppercase">fjord</h1>
-            <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold block mt-0.5">Future Milestone Furniture</span>
-            <p className="text-[11px] text-gray-500 mt-2 max-w-xs leading-normal">
+            <div className="flex items-center gap-3">
+              <svg width="34" height="27" viewBox="0 0 287 229" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0 text-black">
+                <path d="M87.8077 65.3935C115.406 66.2883 135.246 83.8697 142.855 92.6595C166.484 66.0782 199.642 63.2085 213.267 65.0964C269.597 72.4865 285.917 121.565 285.917 145.553V226.159C285.917 227.169 284.663 227.351 283.653 227.351H248.771C246.699 227.524 246.534 224.513 246.534 222.433V151.066C247.369 119.599 224.704 107.361 213.267 105.176C182.728 99.5964 166.239 122.082 163.198 140.605C162.064 147.509 162.994 154.579 162.994 161.575V223.687C162.994 224.738 162.916 226.247 162.152 226.968C161.448 227.634 160.716 227.5 159.747 227.5H125.102C123.431 227.5 123.312 225.984 123.312 225.116V151.811C124.625 118.079 100.935 107.832 89.8962 105.299C88.106 105.001 87.8077 104.256 87.8077 103.835V65.3935Z" fill="currentColor"/>
+                <path d="M0.5 74.8408C4.62763 22.5872 51.7228 0.168822 79.9038 0.503694C80.5642 0.511541 81.1784 0.785788 81.6454 1.25284C82.1351 1.74262 82.4089 2.40766 82.4061 3.10025L82.2635 38.4762C82.2621 38.8287 82.1214 39.1663 81.8722 39.4156C81.6422 39.6457 81.3275 39.7839 81.003 39.807C51.2199 41.9285 42.7099 63.4225 40.3363 76.0347C52.7754 67.4304 72.0744 64.9226 80.836 64.706C81.2644 64.6954 81.6638 64.9014 81.9128 65.2501C82.1395 65.5675 82.2613 65.9477 82.2613 66.3377V102.063C82.2613 102.696 82.0316 103.307 81.6149 103.784C81.3602 104.075 80.9887 104.252 80.6028 104.28C46.9871 106.723 39.344 134.365 39.7395 147.962V225.158C39.7395 225.971 39.3427 226.733 38.6766 227.2C38.3973 227.395 38.0646 227.5 37.7236 227.5H2.85894C2.29466 227.5 1.74405 227.326 1.28181 227.003C0.791816 226.66 0.5 226.099 0.5 225.501V74.8408Z" fill="currentColor"/>
+              </svg>
+              <div>
+                <h1 className="text-2xl font-extrabold tracking-tight uppercase leading-none">FUTURE MILESTONE</h1>
+                <span className="text-[10px] text-gray-500 uppercase tracking-widest font-bold block mt-1">Scandinavian Furniture</span>
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-500 mt-3 max-w-xs leading-normal">
               108 Studio Lane, Industrial Area,<br/>
               Mumbai, MH, 400013<br/>
-              support@fjord.com
+              info@futuremilestone.shop
             </p>
           </div>
           <div className="text-right">

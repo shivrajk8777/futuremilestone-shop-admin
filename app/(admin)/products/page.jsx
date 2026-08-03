@@ -42,9 +42,9 @@ export default async function ProductsPage() {
     {
       label: "Starting price",
       value: products.length
-        ? new Intl.NumberFormat("en-IN", {
+        ? new Intl.NumberFormat("en-US", {
             style: "currency",
-            currency: "INR",
+            currency: "USD",
             maximumFractionDigits: 0,
           }).format(lowestPrice)
         : "--",

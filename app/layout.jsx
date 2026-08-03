@@ -11,6 +11,11 @@ const dmSans = DM_Sans({
 export const metadata = {
   title: "Futuremilestone Admin",
   description: "Admin dashboard for the Futuremilestone storefront.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({ children }) {

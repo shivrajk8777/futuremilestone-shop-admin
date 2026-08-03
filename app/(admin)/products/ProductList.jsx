@@ -14,9 +14,9 @@ function formatDate(value) {
 }
 
 function formatPrice(value) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "INR",
+    currency: "USD",
     maximumFractionDigits: 0,
   }).format(value);
 }
@@ -435,11 +435,27 @@ export default function ProductList({ products: initialProducts, collections }) 
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       {product.imageUrl ? (
-                        <img alt={product.name} className="w-9 h-9 rounded-lg object-cover bg-fjord-ink/8 border border-fjord-soft-line flex-shrink-0" src={product.imageUrl} />
+                        <a
+                          href={`${process.env.NEXT_PUBLIC_STORE_URL || 'https://futuremilestone.shop'}/shop/${product.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="View on website"
+                          className="hover:opacity-80 transition-opacity"
+                        >
+                          <img alt={product.name} className="w-9 h-9 rounded-lg object-cover bg-fjord-ink/8 border border-fjord-soft-line flex-shrink-0 cursor-pointer" src={product.imageUrl} />
+                        </a>
                       ) : (
                         <div className="w-9 h-9 rounded-lg bg-fjord-ink/8 border border-fjord-soft-line grid place-items-center text-fjord-muted text-[10px] flex-shrink-0">No image</div>
                       )}
-                      <span className="font-semibold text-fjord-ink line-clamp-1">{product.name}</span>
+                      <a
+                        href={`${process.env.NEXT_PUBLIC_STORE_URL || 'https://futuremilestone.shop'}/shop/${product.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title="View on website"
+                        className="font-semibold text-fjord-ink line-clamp-1 hover:underline cursor-pointer"
+                      >
+                        {product.name}
+                      </a>
                     </div>
                   </td>
                   <td className="px-5 py-3 text-fjord-muted">{product.collectionName || "Unassigned"}</td>

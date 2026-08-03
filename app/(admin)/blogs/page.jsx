@@ -155,7 +155,7 @@ export default function BlogsPage() {
                             Edit
                           </Link>
                           <a
-                            href={`http://localhost:3000/blog/${blog.slug}`}
+                            href={`${(process.env.NEXT_PUBLIC_STORE_URL || 'https://futuremilestone.shop').replace(/\/$/, '')}/blog/${blog.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-3 py-1.5 rounded-full border border-fjord-line bg-fjord-panel-strong text-fjord-muted text-[12px] font-semibold hover:bg-fjord-ink hover:text-fjord-bg hover:border-fjord-ink transition-all active:scale-[0.97]"

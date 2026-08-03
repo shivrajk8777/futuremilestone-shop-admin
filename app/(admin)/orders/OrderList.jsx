@@ -14,9 +14,9 @@ function formatDate(value) {
 }
 
 function formatPrice(value) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "INR",
+    currency: "USD",
     maximumFractionDigits: 0,
   }).format(value);
 }
@@ -174,12 +174,12 @@ export default function OrderList({ orders }) {
           <thead>
             <tr className="border-b border-fjord-soft-line bg-fjord-bg/10 text-fjord-muted uppercase tracking-wider text-[11px] font-semibold">
               <th className="px-5 py-3">Order Number</th>
-              <th className="px-5 py-3">Date</th>
+              <th className="px-5 py-3 whitespace-nowrap">Date</th>
               <th className="px-5 py-3">Customer</th>
-              <th className="px-5 py-3">Items</th>
-              <th className="px-5 py-3">Total</th>
-              <th className="px-5 py-3">Status</th>
-              <th className="px-5 py-3 text-right">Actions</th>
+              <th className="px-5 py-3 whitespace-nowrap">Items</th>
+              <th className="px-5 py-3 whitespace-nowrap">Total</th>
+              <th className="px-5 py-3 whitespace-nowrap">Status</th>
+              <th className="px-5 py-3 text-right whitespace-nowrap">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-fjord-soft-line/60">
@@ -194,22 +194,22 @@ export default function OrderList({ orders }) {
                 const totalItems = order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
                 return (
                   <tr key={order.id} className="hover:bg-fjord-accent/2 transition-colors animate-fade-in">
-                    <td className="px-5 py-3 font-semibold text-fjord-ink">{order.orderNumber}</td>
-                    <td className="px-5 py-3 text-fjord-muted">{formatDate(order.createdAt)}</td>
+                    <td className="px-5 py-3 font-semibold text-fjord-ink whitespace-nowrap">{order.orderNumber}</td>
+                    <td className="px-5 py-3 text-fjord-muted whitespace-nowrap">{formatDate(order.createdAt)}</td>
                     <td className="px-5 py-3">
                       <div className="space-y-0.5">
                         <span className="font-semibold block text-fjord-ink">{order.customerName}</span>
                         <span className="text-fjord-muted text-[11px] block">{order.customerEmail}</span>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-fjord-muted">
+                    <td className="px-5 py-3 text-fjord-muted whitespace-nowrap">
                       {totalItems} {totalItems === 1 ? "item" : "items"}
                     </td>
-                    <td className="px-5 py-3 font-semibold text-fjord-ink">
+                    <td className="px-5 py-3 font-semibold text-fjord-ink whitespace-nowrap">
                       {formatPrice(order.total)}
                     </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-block rounded-full px-3.5 py-1.5 text-[12px] font-semibold ${
+                    <td className="px-5 py-3 whitespace-nowrap">
+                      <span className={`inline-block rounded-full px-3.5 py-1.5 text-[12px] font-semibold whitespace-nowrap ${
                         order.status === "Delivered"
                           ? "text-fjord-success bg-fjord-success/12"
                           : ["Processing", "Accepted", "Dispatched", "Shipped"].includes(order.status)
@@ -221,9 +221,9 @@ export default function OrderList({ orders }) {
                         {order.status}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td className="px-5 py-3 text-right whitespace-nowrap">
                       <Link
-                        className="inline-block rounded-full px-3.5 py-1.5 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold hover:bg-fjord-accent hover:text-fjord-bg hover:border-fjord-accent transition-all text-[12px] active:scale-[0.97]"
+                        className="inline-block rounded-full px-3.5 py-1.5 border border-fjord-line bg-fjord-panel-strong text-fjord-ink font-semibold hover:bg-fjord-accent hover:text-fjord-bg hover:border-fjord-accent transition-all text-[12px] active:scale-[0.97] whitespace-nowrap"
                         href={`/orders/${order.id}`}
                       >
                         View Details

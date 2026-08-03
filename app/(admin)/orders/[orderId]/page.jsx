@@ -20,9 +20,9 @@ function formatDate(value) {
 }
 
 function formatPrice(value) {
-  return new Intl.NumberFormat("en-IN", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
-    currency: "INR",
+    currency: "USD",
     maximumFractionDigits: 0,
   }).format(value);
 }
@@ -114,8 +114,8 @@ export default async function OrderDetailsPage({ params }) {
                   </thead>
                   <tbody className="divide-y divide-fjord-soft-line/60">
                     {order.items.map((item) => {
-                      const productId = productMap[item.slug];
-                      const productLink = productId ? `/products/${productId}` : "#";
+                      const STORE_URL = process.env.NEXT_PUBLIC_STORE_URL || 'https://futuremilestone.shop';
+                      const storeProductUrl = item.slug ? `${STORE_URL}/shop/${item.slug}` : '#';
 
                       return (
                         <tr
@@ -125,21 +125,33 @@ export default async function OrderDetailsPage({ params }) {
                           <td className="px-5 py-3">
                             <div className="flex items-center gap-3">
                               {item.image ? (
-                                <Link href={productLink} className="hover:opacity-80 transition-opacity">
+                                <a
+                                  href={storeProductUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="View on website"
+                                  className="hover:opacity-80 transition-opacity"
+                                >
                                   <img
                                     alt={item.name}
-                                    className="w-9 h-9 rounded-lg object-cover bg-fjord-ink/8 border border-fjord-soft-line flex-shrink-0"
+                                    className="w-9 h-9 rounded-lg object-cover bg-fjord-ink/8 border border-fjord-soft-line flex-shrink-0 cursor-pointer"
                                     src={item.image}
                                   />
-                                </Link>
+                                </a>
                               ) : (
                                 <div className="w-9 h-9 rounded-lg bg-fjord-ink/8 border border-fjord-soft-line grid place-items-center text-fjord-muted text-[10px] flex-shrink-0">
                                   No img
                                 </div>
                               )}
-                              <Link href={productLink} className="font-semibold text-fjord-ink line-clamp-1 hover:underline">
+                              <a
+                                href={storeProductUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title="View on website"
+                                className="font-semibold text-fjord-ink line-clamp-1 hover:underline cursor-pointer"
+                              >
                                 {item.name}
-                              </Link>
+                              </a>
                             </div>
                           </td>
                           <td className="px-5 py-3 text-fjord-muted text-[12px] capitalize">
