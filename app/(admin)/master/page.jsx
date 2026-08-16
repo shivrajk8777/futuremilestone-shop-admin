@@ -1,11 +1,15 @@
 import { getSettings } from "../../../lib/settings";
+import { listCollections } from "../../../lib/collections";
 import MasterSettingsForm from "./MasterSettingsForm";
 import { updateSettingsAction } from "./actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function MasterPage() {
-  const settings = await getSettings();
+  const [settings, collections] = await Promise.all([
+    getSettings(),
+    listCollections(),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -16,7 +20,7 @@ export default async function MasterPage() {
         </p>
       </div>
 
-      <MasterSettingsForm initialSettings={settings} action={updateSettingsAction} />
+      <MasterSettingsForm initialSettings={settings} collections={collections} action={updateSettingsAction} />
     </div>
   );
 }

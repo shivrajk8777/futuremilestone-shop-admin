@@ -70,7 +70,7 @@ function TrashIcon({ className = "" }) {
   );
 }
 
-export default function MasterSettingsForm({ initialSettings, action }) {
+export default function MasterSettingsForm({ initialSettings, collections = [], action }) {
   const [state, formAction, isPending] = useActionState(action, initialState);
   const [form, setForm] = useState(initialSettings);
   const [uploadingIndices, setUploadingIndices] = useState({});
@@ -85,6 +85,8 @@ export default function MasterSettingsForm({ initialSettings, action }) {
       JSON.stringify({
         marqueeVisible: form.marqueeVisible,
         marqueeText: form.marqueeText,
+        firstOrderDiscountVisible: form.firstOrderDiscountVisible ?? true,
+        firstOrderDiscountPercentage: Number(form.firstOrderDiscountPercentage) ?? 20,
         carouselVisible: form.carouselVisible,
         slides: form.slides.map((slide) => ({
           slug: slide.slug,
@@ -287,7 +289,69 @@ export default function MasterSettingsForm({ initialSettings, action }) {
         )}
       </section>
 
-      {/* Section 2: Carousel Settings */}
+      {/* Section 2: First Order Discount */}
+      <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
+        <div className="flex items-center justify-between gap-4 mb-4">
+          <div>
+            <h2 className="mt-1 mb-0 text-[22px] font-bold tracking-[-0.04em] flex items-center gap-2">
+              First Order Discount (%)
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-fjord-accent/15 text-fjord-accent">
+                {form.firstOrderDiscountVisible ?? true ? `${form.firstOrderDiscountPercentage ?? 20}% OFF` : "Disabled"}
+              </span>
+            </h2>
+            <p className="mt-1 mb-0 text-fjord-muted text-[13px]">
+              Set an extra percentage discount automatically applied at checkout on a customer's first purchase.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => updateField("firstOrderDiscountVisible", !(form.firstOrderDiscountVisible ?? true))}
+            className={`relative inline-flex h-6.5 w-12 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+              (form.firstOrderDiscountVisible ?? true) ? "bg-fjord-accent" : "bg-fjord-ink/10"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5.5 w-5.5 transform rounded-full bg-fjord-panel-strong shadow ring-0 transition duration-200 ease-in-out ${
+                (form.firstOrderDiscountVisible ?? true) ? "translate-x-5.5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
+        {(form.firstOrderDiscountVisible ?? true) && (
+          <div className="grid gap-3 mt-2">
+            <div className="grid gap-2">
+              <label className="text-[13px] font-semibold text-fjord-ink" htmlFor="firstOrderDiscountPercentage">
+                First Order Discount Percentage (%)
+              </label>
+              <div className="relative">
+                <input
+                  id="firstOrderDiscountPercentage"
+                  onChange={(e) => updateField("firstOrderDiscountPercentage", Number(e.target.value))}
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={form.firstOrderDiscountPercentage ?? 20}
+                  className={`${inputClass} pr-12`}
+                  placeholder="20"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-fjord-muted font-bold text-[14px] pointer-events-none">
+                  %
+                </span>
+              </div>
+            </div>
+            <div className="p-3 bg-fjord-accent/10 border border-fjord-accent/20 rounded-[16px] flex items-center gap-2 text-fjord-ink text-[12px]">
+              <span className="text-fjord-accent font-bold text-[14px]">💡</span>
+              <span>
+                New customers will automatically receive <strong>{form.firstOrderDiscountPercentage ?? 20}% extra discount</strong> off their order total on their first checkout.
+              </span>
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Section 3: Carousel Settings */}
       <section className="p-[18px] sm:p-[22px] bg-fjord-panel/72 border border-fjord-soft-line backdrop-blur-[14px] rounded-[32px] shadow-fjord-soft">
         <div className="flex items-center justify-between gap-4 mb-4">
           <div>
@@ -461,16 +525,40 @@ export default function MasterSettingsForm({ initialSettings, action }) {
 
                         <div className="grid gap-1.5">
                           <label className="text-[12px] font-semibold text-fjord-ink" htmlFor={`slide-slug-${idx}`}>
-                            Product Slug / Link
+                            Select Category / Product Link
                           </label>
-                          <input
-                            id={`slide-slug-${idx}`}
-                            onChange={(e) => updateSlide(idx, "slug", e.target.value)}
-                            type="text"
-                            value={slide.slug}
-                            className={inputClass}
-                            placeholder="sona"
-                          />
+                          <div className="flex flex-col gap-2">
+                            <select
+                              className={inputClass}
+                              value={
+                                collections.some((c) => c.slug === slide.slug || `/shop?category=${c.slug}` === slide.slug)
+                                  ? collections.find((c) => c.slug === slide.slug || `/shop?category=${c.slug}` === slide.slug)?.slug || ""
+                                  : slide.slug ? "custom" : ""
+                              }
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val && val !== "custom") {
+                                  updateSlide(idx, "slug", `/shop?category=${val}`);
+                                }
+                              }}
+                            >
+                              <option value="" className="bg-[#1c1d22] text-white">-- Select Category / Collection --</option>
+                              {collections.map((cat) => (
+                                <option key={cat.id || cat.slug} value={cat.slug} className="bg-[#1c1d22] text-white">
+                                  {cat.name} ({cat.slug})
+                                </option>
+                              ))}
+                              <option value="custom" className="bg-[#1c1d22] text-white">Custom Link / Product Slug...</option>
+                            </select>
+                            <input
+                              id={`slide-slug-${idx}`}
+                              onChange={(e) => updateSlide(idx, "slug", e.target.value)}
+                              type="text"
+                              value={slide.slug}
+                              className={inputClass}
+                              placeholder="e.g. /shop?category=kitchen-dining or product-slug"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
