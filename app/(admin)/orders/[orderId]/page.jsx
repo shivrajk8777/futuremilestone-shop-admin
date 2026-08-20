@@ -23,7 +23,8 @@ function formatPrice(value) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(value);
 }
 
@@ -82,7 +83,7 @@ export default async function OrderDetailsPage({ params }) {
   // Calculate pricing breakdown
   const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = subtotal >= 500 ? 0 : 15;
-  const tax = Math.round(subtotal * 0.08);
+  const tax = Number((subtotal * 0.08).toFixed(2));
 
   return (
     <>

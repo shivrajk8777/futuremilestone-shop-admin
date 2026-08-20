@@ -45,7 +45,8 @@ export default async function ProductsPage() {
         ? new Intl.NumberFormat("en-US", {
             style: "currency",
             currency: "USD",
-            maximumFractionDigits: 0,
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
           }).format(lowestPrice)
         : "--",
       meta: products.length ? "Lowest listed product price" : "No prices configured",
