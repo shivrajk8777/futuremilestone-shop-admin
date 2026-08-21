@@ -1,5 +1,5 @@
 {
-  "name": "fjord-admin-panel",
+  "name": "futuremilestone-admin-panel",
   "private": true,
   "scripts": {
     "dev": "next dev",
