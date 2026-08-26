@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
 
 const MONGO_URI = "mongodb://127.0.0.1:27017";
-const DATABASE_NAME = "fjord_admin";
+const DATABASE_NAME = "futuremilestone_admin";
 
 const client = new MongoClient(MONGO_URI, {
   maxPoolSize: 5,

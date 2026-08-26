@@ -3,8 +3,8 @@ import { MongoClient } from "mongodb";
 
 const SEED_CONFIG = {
   mongoUri: "mongodb://127.0.0.1:27017",
-  databaseName: "fjord_admin",
-  email: "admin@fjord.com",
+  databaseName: "futuremilestone_admin",
+  email: "admin@futuremilestone.com",
   password: "password1234",
   role: "admin",
   forceReset: true,

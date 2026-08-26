@@ -1,0 +1,62 @@
+"use client";
+
+import { useTransition, ChangeEvent } from "react";
+import { updateOrderStatusAction } from "./actions";
+
+export interface StatusDropdownProps {
+  orderId: string;
+  currentStatus: string;
+}
+
+export default function StatusDropdown({ orderId, currentStatus }: StatusDropdownProps) {
+  const [isPending, startTransition] = useTransition();
+
+  const handleChange = async (e: ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = e.target.value;
+    const formData = new FormData();
+    formData.append("status", newStatus);
+
+    startTransition(async () => {
+      await updateOrderStatusAction(orderId, formData);
+    });
+  };
+
+  return (
+    <div className="relative inline-block w-full max-w-[150px]">
+      <select
+        value={currentStatus}
+        onChange={handleChange}
+        disabled={isPending}
+        className={`w-full appearance-none rounded-full px-4 py-2 text-[13px] font-semibold bg-futuremilestone-ink/6 border-none focus:outline-none focus:ring-1 focus:ring-futuremilestone-accent transition cursor-pointer pr-8 ${
+          currentStatus === "Delivered"
+            ? "text-futuremilestone-success bg-futuremilestone-success/12"
+            : ["Processing", "Accepted", "Dispatched", "Shipped"].includes(currentStatus)
+              ? "text-[#9b6b2b] bg-[#9b6b2b]/12"
+              : ["Cancelled", "Refunded"].includes(currentStatus)
+                ? "text-red-600 bg-red-600/12"
+                : "text-futuremilestone-ink"
+        }`}
+      >
+        <option value="Processing">Processing</option>
+        <option value="Accepted">Accepted</option>
+        <option value="Dispatched">Dispatched</option>
+        <option value="Shipped">Shipped</option>
+        <option value="Delivered">Delivered</option>
+        <option value="Cancelled">Cancelled</option>
+        <option value="Refunded">Refunded</option>
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-futuremilestone-muted">
+        {isPending ? (
+          <svg className="animate-spin h-3.5 w-3.5 text-current" viewBox="0 0 24 24" fill="none">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
+        ) : (
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        )}
+      </div>
+    </div>
+  );
+}

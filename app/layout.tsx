@@ -1,0 +1,46 @@
+import { Suspense, ReactNode } from "react";
+import { DM_Sans } from "next/font/google";
+import AdminUrlAlertBridge from "../components/AdminUrlAlertBridge";
+import "./globals.css";
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  display: "swap",
+});
+
+export const metadata = {
+  title: "Futuremilestone Admin",
+  description: "Admin dashboard for the Futuremilestone storefront.",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function() {
+              try {
+                const saved = localStorage.getItem("theme");
+                const dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                const theme = saved || (dark ? "dark" : "light");
+                document.documentElement.setAttribute("data-theme", theme);
+              } catch (e) {}
+            })()`,
+          }}
+        />
+      </head>
+      <body className={dmSans.className} suppressHydrationWarning>
+        <Suspense fallback={null}>
+          <AdminUrlAlertBridge />
+        </Suspense>
+        {children}
+      </body>
+    </html>
+  );
+}
