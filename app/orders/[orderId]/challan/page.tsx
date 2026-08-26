@@ -126,10 +126,10 @@ export default async function OrderChallanPage({ params }: OrderChallanPageProps
               <p className="font-bold text-gray-900 text-sm">{recipientName}</p>
               <p className="text-gray-700 leading-relaxed mt-1">{addressLine}</p>
               {order.shippingAddress?.phone && (
-                <p className="text-gray-800 font-medium mt-1">📞 <strong>Phone:</strong> {order.shippingAddress.phone}</p>
+                <p className="text-gray-800 font-medium mt-1"> <strong>Phone:</strong> {order.shippingAddress.phone}</p>
               )}
               {order.customerEmail && (
-                <p className="text-gray-600 text-[11.5px] mt-0.5">✉️ <strong>Email:</strong> {order.customerEmail}</p>
+                <p className="text-gray-600 text-[11.5px] mt-0.5"><strong>Email:</strong> {order.customerEmail}</p>
               )}
             </div>
           </div>
