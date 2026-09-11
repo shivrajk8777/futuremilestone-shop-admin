@@ -144,6 +144,27 @@ function generateStatusEmail(status: string, order: OrderDetail, options: Update
       `;
       break;
 
+    case "Out for Delivery":
+      subject = `Order ${orderNumber} is Out for Delivery!`;
+      title = "Your Order is Out for Delivery!";
+      body = `
+        <p>Dear ${customerName},</p>
+        <p>Your order <strong>${orderNumber}</strong> is out for delivery today and will be arriving shortly.</p>
+        <div style="background-color: #f6f6f6; border-radius: 8px; padding: 12px; margin: 12px 0; border: 1px solid #ececec;">
+          <table style="width: 100%; font-size: 12px;">
+            <tr>
+              <td style="color: #0e101199;"><strong>Courier:</strong></td>
+              <td style="color: #0e1011; text-align: right;">${options.deliveryPartnerName || order.deliveryPartnerName || "Courier Services"}</td>
+            </tr>
+            <tr>
+              <td style="color: #0e101199;"><strong>Tracking ID:</strong></td>
+              <td style="color: #0e1011; font-family: monospace; text-align: right;">${options.trackingId || order.trackingId || "N/A"}</td>
+            </tr>
+          </table>
+        </div>
+      `;
+      break;
+
     case "Refunded":
       subject = `Order ${orderNumber} Refunded`;
       title = "Your Order Has Been Refunded";

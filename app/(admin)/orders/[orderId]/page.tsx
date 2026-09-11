@@ -2,7 +2,7 @@ import {
   PageHeader,
   PageSection,
 } from "../../../../components/admin/Sections";
-import { getOrder } from "../../../../lib/orders";
+import { getOrder, updateOrderStatus } from "../../../../lib/orders";
 import { formatOrderPrice } from "../../../../lib/formatOrderPrice";
 import { getDatabase } from "../../../../lib/mongodb";
 import { trackShipment } from "../../../../lib/tracking-providers";
@@ -38,6 +38,26 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
       );
       const dispatchTime = dispatchEntry ? new Date(dispatchEntry.timestamp) : new Date(order.updatedAt || order.createdAt || Date.now());
       tracking = await trackShipment(order.deliveryPartnerCode || "", order.trackingId, dispatchTime);
+
+      if (tracking && tracking.status) {
+        const trackingStatus = tracking.status.trim();
+        const isDelivered = trackingStatus.toLowerCase() === "delivered";
+        const isOutForDelivery = trackingStatus.toLowerCase() === "out for delivery";
+
+        if (isDelivered && order.status !== "Delivered") {
+          await updateOrderStatus(orderId, "Delivered", {
+            comment: tracking.checkpoints?.[0]?.description || "Delivered according to carrier tracking.",
+            sendToUser: true
+          });
+          order.status = "Delivered";
+        } else if (isOutForDelivery && order.status !== "Delivered" && order.status !== "Out for Delivery") {
+          await updateOrderStatus(orderId, "Out for Delivery", {
+            comment: tracking.checkpoints?.[0]?.description || "Out for delivery with courier.",
+            sendToUser: false
+          });
+          order.status = "Out for Delivery";
+        }
+      }
     } catch (e) {
       console.error("Failed to load live tracking info for admin page:", e);
     }

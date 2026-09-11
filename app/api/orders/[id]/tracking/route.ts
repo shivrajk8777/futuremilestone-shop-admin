@@ -3,6 +3,7 @@ import { ObjectId } from "mongodb";
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentAdminSession } from "../../../../../lib/auth/session";
 import { trackShipment } from "../../../../../lib/tracking-providers";
+import { updateOrderStatus } from "../../../../../lib/orders";
 
 export interface TrackingRouteParams {
   params: Promise<{
@@ -46,9 +47,32 @@ export async function GET(request: NextRequest, { params }: TrackingRouteParams)
     const partnerCode = order.deliveryPartnerCode || "";
     const trackingDetails = await trackShipment(partnerCode, order.trackingId, dispatchTime);
 
+    // Auto-sync if carrier reported Delivered or Out for Delivery
+    let syncedStatus = order.status;
+    if (trackingDetails && trackingDetails.status) {
+      const trackingStatus = trackingDetails.status.trim();
+      const isDelivered = trackingStatus.toLowerCase() === "delivered";
+      const isOutForDelivery = trackingStatus.toLowerCase() === "out for delivery";
+
+      if (isDelivered && order.status !== "Delivered") {
+        await updateOrderStatus(id, "Delivered", {
+          comment: trackingDetails.checkpoints?.[0]?.description || "Delivered according to carrier tracking.",
+          sendToUser: true
+        });
+        syncedStatus = "Delivered";
+      } else if (isOutForDelivery && order.status !== "Delivered" && order.status !== "Out for Delivery") {
+        await updateOrderStatus(id, "Out for Delivery", {
+          comment: trackingDetails.checkpoints?.[0]?.description || "Out for delivery with courier.",
+          sendToUser: false
+        });
+        syncedStatus = "Out for Delivery";
+      }
+    }
+
     return NextResponse.json({
       success: true,
-      tracking: trackingDetails
+      tracking: trackingDetails,
+      syncedStatus
     });
   } catch (error: any) {
     console.error("Admin fetch tracking error:", error);

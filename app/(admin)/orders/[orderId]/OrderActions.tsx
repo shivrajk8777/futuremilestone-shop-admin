@@ -229,7 +229,7 @@ export default function OrderActions({
       )}
 
       {/* Mark Delivered button */}
-      {(currentStatus === "Dispatched" || currentStatus === "Shipped") && (
+      {(currentStatus === "Dispatched" || currentStatus === "Shipped" || currentStatus === "Out for Delivery") && (
         <button
           onClick={handleDeliver}
           disabled={isPending}
@@ -240,7 +240,7 @@ export default function OrderActions({
       )}
 
       {/* Print Challan button */}
-      {["Accepted", "Dispatched", "Shipped", "Delivered"].includes(currentStatus) && (
+      {["Accepted", "Dispatched", "Shipped", "Out for Delivery", "Delivered"].includes(currentStatus) && (
         <button
           onClick={openChallanPrint}
           className="w-full text-center rounded-xl py-3 bg-futuremilestone-panel-strong border border-futuremilestone-soft-line text-futuremilestone-ink font-semibold text-[13px] hover:bg-futuremilestone-bg/30 transition-all cursor-pointer flex items-center justify-center gap-2"
