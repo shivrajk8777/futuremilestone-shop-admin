@@ -91,16 +91,23 @@ export default function OrderActions({
 
   const handleCancel = async () => {
     const { value: reason } = await Swal.fire({
-      title: "Cancel Order",
-      input: "text",
-      inputLabel: "Reason for cancellation",
-      inputPlaceholder: "Enter explanation...",
+      title: "Cancel Order?",
+      text: "Please enter the reason for cancelling this order:",
+      input: "textarea",
+      inputPlaceholder: "e.g., Customer requested cancellation, Item out of stock, Address not serviceable...",
+      inputAttributes: {
+        "aria-label": "Cancellation Reason",
+        style: "font-size: 13px; font-family: inherit;",
+        rows: "3",
+      },
       showCancelButton: true,
       confirmButtonColor: "#ef4444",
-      confirmButtonText: "Cancel Order",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Confirm Cancellation",
+      cancelButtonText: "Keep Order",
       inputValidator: (value) => {
         if (!value || !value.trim()) {
-          return "Please write a reason!";
+          return "Please provide a reason for cancellation!";
         }
       },
     });

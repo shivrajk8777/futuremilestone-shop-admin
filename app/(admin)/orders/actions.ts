@@ -5,16 +5,24 @@ import { updateOrderStatus, getOrder } from "../../../lib/orders";
 import { getDatabase } from "../../../lib/mongodb";
 import { ObjectId } from "mongodb";
 
-export async function updateOrderStatusAction(orderId: string, formData: FormData): Promise<void> {
+export async function updateOrderStatusAction(orderId: string, formData: FormData): Promise<{ success?: boolean; error?: string }> {
   const status = formData.get("status");
-  if (!status || typeof status !== "string") return;
+  const reason = formData.get("reason");
+  if (!status || typeof status !== "string") return { error: "Invalid status" };
 
   try {
-    await updateOrderStatus(orderId, status);
+    const options: any = {};
+    if (reason && typeof reason === "string" && reason.trim()) {
+      options.comment = status === "Cancelled" ? `Order cancelled by future milestone. Reason: ${reason.trim()}` : reason.trim();
+      options.adminMessage = status === "Cancelled" ? `Order cancelled. Reason: ${reason.trim()}` : reason.trim();
+    }
+    await updateOrderStatus(orderId, status, options);
     revalidatePath("/orders");
     revalidatePath(`/orders/${orderId}`);
-  } catch (error) {
+    return { success: true };
+  } catch (error: any) {
     console.error("Failed to update order status:", error);
+    return { error: error.message || "Failed to update order status" };
   }
 }
 
@@ -44,7 +52,7 @@ export async function cancelOrderAction(orderId: string, reason: string): Promis
 
     const newStatus = "Cancelled";
     await updateOrderStatus(orderId, newStatus, {
-      comment: `Order cancelled by Admin. Reason: ${reason || "No reason specified."}`,
+      comment: `Order cancelled by future milestone. Reason: ${reason || "No reason specified."}`,
       adminMessage: `Order cancelled. Reason: ${reason || "No reason specified."}`
     });
 

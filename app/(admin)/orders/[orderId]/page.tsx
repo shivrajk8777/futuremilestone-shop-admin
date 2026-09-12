@@ -254,6 +254,22 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                 <StatusDropdown orderId={order.id} currentStatus={order.status} />
               </div>
 
+              {order.status === "Cancelled" && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-600 rounded-2xl p-4 text-[13px] space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-red-700">
+                    <span>🚫</span> Order Cancelled
+                  </div>
+                  <div className="text-red-700/90 text-xs">
+                    <span className="font-semibold text-red-800">Reason: </span>
+                    <span className="italic">
+                      {order.adminMessage?.replace(/^Order cancelled\.\s*Reason:\s*/i, "") ||
+                        order.statusTimeline?.find((t) => t.status === "Cancelled")?.comment?.replace(/^Order cancelled by Admin\.\s*Reason:\s*/i, "") ||
+                        "No specific reason provided."}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {order.trackingId && (
                 <div className="text-[13px] space-y-3.5 border-b border-futuremilestone-soft-line/60 pb-3">
                   <div className="flex justify-between items-start gap-4">

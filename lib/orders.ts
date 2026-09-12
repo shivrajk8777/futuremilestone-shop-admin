@@ -64,7 +64,7 @@ function getEmailTemplate(title: string, messageHtml: string): string {
         ${messageHtml}
       </div>
       <div style="border-top: 1px solid #ececec; padding-top: 20px; text-align: center; font-size: 11px; color: #0e10114d;">
-        <p style="margin: 0;">This is an automated notification from Futuremilestone. Please do not reply directly to this email.</p>
+        <p style="margin: 0;">This is an automated notification from Future Milestone. Please do not reply directly to this email.</p>
         <p style="margin: 5px 0 0 0;">&copy; ${new Date().getFullYear()} Futuremilestone Furnitures. All rights reserved.</p>
       </div>
     </div>
@@ -166,19 +166,23 @@ function generateStatusEmail(status: string, order: OrderDetail, options: Update
       `;
       break;
 
-    case "Cancelled":
+    case "Cancelled": {
+      const cleanReason = (options.comment || options.adminMessage || "No reason specified.")
+        .replace(/^Order cancelled by [^.]*\.\s*Reason:\s*/i, "")
+        .replace(/^Order cancelled\.\s*Reason:\s*/i, "");
+
       subject = `Order ${orderNumber} Cancelled`;
       title = "Your Order Has Been Cancelled";
       body = `
         <p>Dear ${customerName},</p>
         <p>We regret to inform you that your order <strong>${orderNumber}</strong> has been cancelled.</p>
-        <div style="background-color: #f6f6f6; border-left: 3px solid #d8ccb7; padding: 12px; margin: 15px 0; font-size: 13px; font-weight: 500; color: #0e1011;">
-          <strong>Cancellation Reason:</strong><br/>
-          ${options.comment || options.adminMessage || "No reason specified."}
-        </div>
+        <p style="margin: 15px 0; font-size: 13.5px; color: #0e1011; line-height: 1.5;">
+          <strong>Cancellation Reason:</strong> ${cleanReason}
+        </p>
         <p>If you have any questions or require further assistance regarding this cancellation, please contact our support team.</p>
       `;
       break;
+    }
 
     case "Dispatched":
     case "Shipped":
@@ -588,7 +592,7 @@ export async function getOrder(idOrNumber: string): Promise<OrderDetail | null> 
     if (idOrNumber && idOrNumber.length === 24) {
       order = await collection.findOne({ _id: new ObjectId(idOrNumber) });
     }
-  } catch (e) {}
+  } catch (e) { }
 
   // 2. Try matching by orderNumber (with or without '#')
   if (!order && idOrNumber) {
