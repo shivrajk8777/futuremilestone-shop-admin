@@ -7,7 +7,6 @@ import { formatOrderPrice } from "../../../../lib/formatOrderPrice";
 import { getDatabase } from "../../../../lib/mongodb";
 import { trackShipment } from "../../../../lib/tracking-providers";
 import OrderActions from "./OrderActions";
-import StatusDropdown from "../StatusDropdown";
 
 function formatDate(value: Date | string | number): string {
   return new Intl.DateTimeFormat("en-IN", {
@@ -250,8 +249,22 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
           <PageSection title="Fulfillment & Actions">
             <div className="space-y-4">
               <div className="flex items-center justify-between gap-4 border-b border-futuremilestone-soft-line/60 pb-3">
-                <span className="text-[13px] text-futuremilestone-muted">Current status:</span>
-                <StatusDropdown orderId={order.id} currentStatus={order.status} />
+                <span className="text-[13px] text-futuremilestone-muted font-medium">Current status:</span>
+                <span
+                  className={`inline-block rounded-full px-4 py-1.5 text-[12px] font-bold uppercase tracking-wider ${
+                    order.status === "Delivered"
+                      ? "text-futuremilestone-success bg-futuremilestone-success/12 border border-futuremilestone-success/20"
+                      : order.status === "Out for Delivery"
+                        ? "text-amber-600 bg-amber-500/12 border border-amber-500/20"
+                        : ["Processing", "Accepted", "Dispatched", "Shipped"].includes(order.status)
+                          ? "text-[#9b6b2b] bg-[#9b6b2b]/12 border border-[#9b6b2b]/20"
+                          : ["Cancelled", "Refunded"].includes(order.status)
+                            ? "text-red-600 bg-red-600/12 border border-red-600/20"
+                            : "text-futuremilestone-ink bg-futuremilestone-ink/6 border border-futuremilestone-soft-line"
+                  }`}
+                >
+                  {order.status}
+                </span>
               </div>
 
               {order.status === "Cancelled" && (
