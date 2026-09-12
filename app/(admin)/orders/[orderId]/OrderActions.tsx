@@ -8,6 +8,7 @@ import {
   cancelOrderAction,
   dispatchOrderAction,
   markDeliveredAction,
+  refundOrderAction,
 } from "../actions";
 
 export interface OrderActionsProps {
@@ -126,6 +127,52 @@ export default function OrderActions({
         });
       } else {
         Swal.fire("Error", res?.error || "Failed to cancel order.", "error");
+      }
+    }
+  };
+
+  const handleRefund = async () => {
+    const { value: formValues } = await Swal.fire({
+      title: "Process Refund",
+      html: `
+        <div style="text-align: left; font-size: 13px; font-family: inherit;">
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #111;">Refund Note / Reason</label>
+          <textarea id="swal-refund-reason" class="swal2-textarea" style="width: 100%; margin: 0 0 14px 0; font-size: 13px; box-sizing: border-box; resize: vertical;" rows="2" placeholder="e.g. Order cancelled - full refund initiated to customer"></textarea>
+
+          <label style="display: block; font-weight: 600; margin-bottom: 6px; color: #111;">Transaction / Reference ID (Optional)</label>
+          <input id="swal-refund-txnid" class="swal2-input" style="width: 100%; margin: 0; font-size: 13px; box-sizing: border-box; font-family: monospace;" placeholder="e.g. rfnd_984729104 or Bank UTR" />
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonColor: "#7c3aed",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "Confirm & Process Refund",
+      cancelButtonText: "Cancel",
+      preConfirm: () => {
+        const reason = (document.getElementById("swal-refund-reason") as HTMLTextAreaElement)?.value;
+        const refundTxnId = (document.getElementById("swal-refund-txnid") as HTMLInputElement)?.value;
+        return {
+          reason: reason?.trim() || "Full refund processed for cancelled order.",
+          refundTxnId: refundTxnId?.trim() || "",
+        };
+      },
+    });
+
+    if (formValues) {
+      setIsPending(true);
+      const res = await refundOrderAction(orderId, formValues);
+      setIsPending(false);
+
+      if (res?.success) {
+        Swal.fire({
+          title: "Refund Processed!",
+          text: "Order marked as Refunded and notification sent to customer.",
+          icon: "success",
+          confirmButtonColor: "#0e1011",
+        });
+      } else {
+        Swal.fire("Error", res?.error || "Failed to process refund.", "error");
       }
     }
   };
@@ -256,8 +303,26 @@ export default function OrderActions({
         </button>
       )}
 
+      {/* Process Refund button (For Cancelled or Delivered orders) */}
+      {["Cancelled", "Delivered"].includes(currentStatus) && (
+        <button
+          onClick={handleRefund}
+          disabled={isPending}
+          className="w-full text-center rounded-xl py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-[13px] shadow-sm transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          <span>💳</span> Process Refund
+        </button>
+      )}
+
+      {/* Refunded indicator */}
+      {currentStatus === "Refunded" && (
+        <div className="w-full text-center py-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 font-semibold text-[13px] flex items-center justify-center gap-2">
+          <span>✓</span> Refund Completed
+        </div>
+      )}
+
       {/* Cancel button */}
-      {["Processing", "Accepted"].includes(currentStatus) && (
+      {["Processing", "Accepted", "Dispatched", "Shipped", "Out for Delivery"].includes(currentStatus) && (
         <button
           onClick={handleCancel}
           disabled={isPending}

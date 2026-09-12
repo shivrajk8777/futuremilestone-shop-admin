@@ -246,21 +246,23 @@ function generateStatusEmail(status: string, order: OrderDetail, options: Update
       `;
       break;
 
-    case "Refunded":
+    case "Refunded": {
+      const cleanDetails = (options.adminMessage || options.comment || "The refund has been issued to your original payment method.")
+        .replace(/^Order cancelled by [^.]*\.\s*Reason:\s*/i, "")
+        .replace(/^Order cancelled\.\s*Reason:\s*/i, "");
+
       subject = `Order ${orderNumber} Refunded`;
       title = "Your Order Has Been Refunded";
       body = `
         <p>Dear ${customerName},</p>
         <p>Your order <strong>${orderNumber}</strong> has been refunded.</p>
-        ${(options.adminMessage || options.comment) ? `
-        <div style="background-color: #f6f6f6; border-left: 3px solid #d8ccb7; padding: 12px; margin: 15px 0; font-size: 13px; font-weight: 500; color: #0e1011;">
-          <strong>Details:</strong><br/>
-          ${options.adminMessage || options.comment}
-        </div>
-        ` : ''}
+        <p style="margin: 15px 0; font-size: 13.5px; color: #0e1011; line-height: 1.5;">
+          <strong>Refund Details:</strong> ${cleanDetails}
+        </p>
         <p>The refund will be credited back to your original payment method. If you have any questions, please contact our support team.</p>
       `;
       break;
+    }
 
     case "Processing":
       subject = `Order ${orderNumber} Processing`;

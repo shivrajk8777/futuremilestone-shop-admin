@@ -283,6 +283,22 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                 </div>
               )}
 
+              {order.status === "Refunded" && (
+                <div className="bg-purple-500/10 border border-purple-500/20 text-purple-700 rounded-2xl p-4 text-[13px] space-y-1">
+                  <div className="font-bold flex items-center gap-1.5 text-purple-800">
+                    <span>💳</span> Refund Completed
+                  </div>
+                  <div className="text-purple-700/90 text-xs">
+                    <span className="font-semibold text-purple-800">Details: </span>
+                    <span className="italic">
+                      {order.adminMessage ||
+                        order.statusTimeline?.find((t) => t.status === "Refunded")?.comment ||
+                        "Refund processed for customer."}
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {order.trackingId && (
                 <div className="text-[13px] space-y-3.5 border-b border-futuremilestone-soft-line/60 pb-3">
                   <div className="flex justify-between items-start gap-4">

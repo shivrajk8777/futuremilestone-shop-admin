@@ -65,6 +65,50 @@ export async function cancelOrderAction(orderId: string, reason: string): Promis
   }
 }
 
+export async function refundOrderAction(
+  orderId: string,
+  data?: { reason?: string; refundTxnId?: string }
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    const order = await getOrder(orderId);
+    if (!order) throw new Error("Order not found");
+
+    const reason = data?.reason?.trim() || "Full refund processed by future milestone.";
+    const refundTxnId = data?.refundTxnId?.trim() || "";
+    const newStatus = "Refunded";
+
+    const refundNote = refundTxnId
+      ? `${reason} (Ref TXN: ${refundTxnId})`
+      : reason;
+
+    const db = await getDatabase();
+    if (orderId && orderId.length === 24) {
+      await db.collection("orders").updateOne(
+        { _id: new ObjectId(orderId) },
+        {
+          $set: {
+            refundedAt: new Date(),
+            refundTxnId: refundTxnId || null,
+            refundReason: reason,
+          },
+        }
+      );
+    }
+
+    await updateOrderStatus(orderId, newStatus, {
+      comment: refundNote,
+      adminMessage: refundNote,
+    });
+
+    revalidatePath("/orders");
+    revalidatePath(`/orders/${orderId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to process refund:", error);
+    return { error: error.message || "Failed to process refund" };
+  }
+}
+
 export interface DispatchData {
   trackingId: string;
   deliveryPartnerId: string;
