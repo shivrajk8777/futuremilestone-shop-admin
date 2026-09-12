@@ -253,7 +253,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                 <span className="text-[13px] text-futuremilestone-muted">Current status:</span>
                 <StatusDropdown orderId={order.id} currentStatus={order.status} />
               </div>
-              
+
               {order.trackingId && (
                 <div className="text-[13px] space-y-3.5 border-b border-futuremilestone-soft-line/60 pb-3">
                   <div className="flex justify-between items-start gap-4">
@@ -264,13 +264,12 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                       </span>
                     </div>
                     {tracking && (
-                      <span className={`px-2 py-0.5 rounded-full text-[8.5px] uppercase font-extrabold tracking-wider border ${
-                        tracking.status === "Delivered"
+                      <span className={`px-2 py-0.5 rounded-full text-[8.5px] uppercase font-extrabold tracking-wider border ${tracking.status === "Delivered"
                           ? "bg-futuremilestone-success/12 text-futuremilestone-success border-futuremilestone-success/20"
                           : tracking.status === "Out for Delivery"
                             ? "bg-[#9b6b2b]/12 text-[#9b6b2b] border-[#9b6b2b]/20"
                             : "bg-futuremilestone-accent-soft text-futuremilestone-ink border-futuremilestone-soft-line"
-                      }`}>
+                        }`}>
                         {tracking.status}
                       </span>
                     )}
@@ -289,12 +288,11 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                           const isLatest = idx === 0;
                           return (
                             <div key={idx} className="relative">
-                              <div className={`absolute -left-[16.5px] top-1.5 w-2 h-2 rounded-full border bg-futuremilestone-panel ${
-                                isLatest ? "border-futuremilestone-accent bg-futuremilestone-accent" : "border-futuremilestone-muted bg-futuremilestone-panel-strong"
-                              }`} />
+                              <div className={`absolute -left-[16.5px] top-1.5 w-2 h-2 rounded-full border bg-futuremilestone-panel ${isLatest ? "border-futuremilestone-accent bg-futuremilestone-accent" : "border-futuremilestone-muted bg-futuremilestone-panel-strong"
+                                }`} />
                               <div className="text-[11.5px]">
                                 <span className={`font-semibold block ${isLatest ? "text-futuremilestone-ink" : "text-futuremilestone-muted"}`}>{cp.description}</span>
-                                <span className="text-[9.5px] text-futuremilestone-muted block mt-0.5">📍 {cp.location}</span>
+                                <span className="text-[9.5px] text-futuremilestone-muted block mt-0.5"> {cp.location}</span>
                                 <span className="text-[9px] text-futuremilestone-muted/70 block mt-0.5">
                                   {new Intl.DateTimeFormat("en-IN", {
                                     day: "2-digit",

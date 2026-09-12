@@ -167,7 +167,7 @@ export default function OrderActions({
         <h2>FUTURE MILESTONE</h2>
         <h3>Your Order ${orderNumber} Has Been Dispatched!</h3>
         <p>Dear ${customerName || 'Customer'},</p>
-        <p>Your package is on its way via <strong>${partnerLogo} ${partnerName}</strong> with tracking number: <strong>${trackingId.trim()}</strong>.</p>
+        <p>Your package is on its way via <strong>${partnerName}</strong> with tracking number: <strong>${trackingId.trim()}</strong>.</p>
         ${adminMessage.trim() ? `<p><em>Note: "${adminMessage.trim()}"</em></p>` : ''}
         <p>Thank you for shopping with Futuremilestone.</p>
       </div>
@@ -264,7 +264,7 @@ export default function OrderActions({
       {mounted && isDispatchModalOpen && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-[460px] w-full p-6 shadow-2xl border border-gray-100 animate-fade-in text-gray-900">
-            
+
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-gray-100">
               <div className="flex items-center gap-2.5">
@@ -286,7 +286,7 @@ export default function OrderActions({
 
             {/* Form */}
             <form onSubmit={handleDispatchSubmit} className="mt-5 space-y-4">
-              
+
               {/* Delivery Partner */}
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold uppercase tracking-wider text-gray-500">Delivery Partner</label>

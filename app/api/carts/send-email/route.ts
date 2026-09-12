@@ -74,11 +74,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const prod = raw.product || {};
         const price = Number(prod.price || raw.price || 0);
         const quantity = Number(raw.quantity || 1);
+        const rawImg = prod.imageUrl || prod.image || raw.imageUrl || raw.image;
+        const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || "https://futuremilestone.shop";
+        let imageUrl = "https://res.cloudinary.com/dhkf4qmql/image/upload/futuremilestone/futuremilestone_logo.png";
+        if (rawImg) {
+          if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
+            imageUrl = rawImg;
+          } else {
+            imageUrl = `${storeUrl.replace(/\/$/, "")}${rawImg.startsWith("/") ? "" : "/"}${rawImg}`;
+          }
+        }
+
         return {
           name: prod.name || raw.name || "Product",
           variant: [prod.selectedMaterial || raw.selectedMaterial, prod.selectedDimension || raw.selectedDimension]
             .filter(Boolean)
             .join(" • ") || "Standard",
+          imageUrl,
           price,
           quantity,
           total: price * quantity,
@@ -90,14 +102,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const itemsRowsHtml = items
         .map(
           (item) => `
-          <tr style="border-b: 1px solid #f3f4f6;">
-            <td style="padding: 10px 0; font-weight: 700; color: #111827;">
-              ${item.name}
-              <br/>
-              <span style="font-size: 11px; font-weight: 400; color: #6b7280;">${item.variant}</span>
+          <tr style="border-bottom: 1px solid #f3f4f6;">
+            <td style="padding: 10px 8px 10px 0; width: 52px; vertical-align: middle;">
+              <img src="${item.imageUrl}" alt="${item.name}" width="48" height="48" style="width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid #e5e7eb; display: block;" />
             </td>
-            <td style="padding: 10px 0; text-align: center; font-weight: 700; color: #111827;">${item.quantity}</td>
-            <td style="padding: 10px 0; text-align: right; font-weight: 700; color: #111827;">${formatPrice(item.total)}</td>
+            <td style="padding: 10px 8px; vertical-align: middle;">
+              <div style="font-weight: 700; color: #111827; font-size: 13.5px; line-height: 1.3;">${item.name}</div>
+              <span style="font-size: 11px; font-weight: 400; color: #6b7280; display: block; margin-top: 2px;">${item.variant}</span>
+            </td>
+            <td style="padding: 10px 8px; text-align: center; font-weight: 600; color: #111827; vertical-align: middle;">${item.quantity}</td>
+            <td style="padding: 10px 0 10px 8px; text-align: right; font-weight: 700; color: #111827; vertical-align: middle; white-space: nowrap;">${formatPrice(item.total)}</td>
           </tr>
         `
         )
@@ -106,8 +120,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const emailHtml = `
         <div style="font-family: 'DM Sans', -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 28px; border: 1px solid #e5e7eb; border-radius: 20px; background-color: #ffffff; color: #111827;">
           <div style="text-align: center; border-bottom: 2px solid #111827; padding-bottom: 16px; margin-bottom: 24px;">
+            <img src="https://res.cloudinary.com/dhkf4qmql/image/upload/futuremilestone/futuremilestone_logo.png" alt="Future Milestone" width="42" height="34" style="display: block; margin: 0 auto 10px auto; width: 42px; height: auto; border: 0;" />
             <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: #111827; text-transform: uppercase; line-height: 1;">FUTURE MILESTONE</h1>
-            <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: #6b7280; font-weight: 700; display: block; margin-top: 4px;">Shopping Cart Recovery</span>
           </div>
 
           <h2 style="font-size: 18px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 12px;">You Left Something Special in Your Cart 🛒</h2>
@@ -123,7 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
               <thead>
                 <tr style="border-bottom: 1.5px solid #e5e7eb; text-align: left; color: #6b7280; font-size: 10.5px; text-transform: uppercase;">
-                  <th style="padding-bottom: 8px;">Product</th>
+                  <th style="padding-bottom: 8px;" colspan="2">Product</th>
                   <th style="padding-bottom: 8px; text-align: center;">Qty</th>
                   <th style="padding-bottom: 8px; text-align: right;">Amount</th>
                 </tr>

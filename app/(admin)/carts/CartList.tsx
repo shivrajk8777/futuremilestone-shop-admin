@@ -446,11 +446,10 @@ export default function CartList({ productGroups }: CartListProps) {
                               {/* Expand Chevron Button */}
                               <button
                                 onClick={() => toggleCustomerExpand(customerKey)}
-                                className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer ${
-                                  isCustomerExpanded
-                                    ? "bg-futuremilestone-ink text-futuremilestone-bg border-futuremilestone-ink"
-                                    : "bg-futuremilestone-bg/40 border-futuremilestone-soft-line text-futuremilestone-muted hover:text-futuremilestone-ink hover:bg-futuremilestone-bg"
-                                }`}
+                                className={`w-7 h-7 rounded-lg border flex items-center justify-center text-[10px] font-bold transition-all cursor-pointer ${isCustomerExpanded
+                                  ? "bg-futuremilestone-ink text-futuremilestone-bg border-futuremilestone-ink"
+                                  : "bg-futuremilestone-bg/40 border-futuremilestone-soft-line text-futuremilestone-muted hover:text-futuremilestone-ink hover:bg-futuremilestone-bg"
+                                  }`}
                                 title={isCustomerExpanded ? "Collapse details" : "Expand item details"}
                               >
                                 {isCustomerExpanded ? "▲" : "▼"}
@@ -493,10 +492,10 @@ export default function CartList({ productGroups }: CartListProps) {
                               {(c.customerPhone || c.customerAddress) && (
                                 <div className="border-t border-futuremilestone-soft-line/60 pt-1.5 flex flex-wrap gap-3 text-[10.5px] text-futuremilestone-muted">
                                   {c.customerPhone && (
-                                    <span>📞 <strong>Phone:</strong> {c.customerPhone}</span>
+                                    <span><strong>Phone:</strong> {c.customerPhone}</span>
                                   )}
                                   {c.customerAddress && (
-                                    <span className="truncate max-w-full">📍 <strong>Location:</strong> {c.customerAddress}</span>
+                                    <span className="truncate max-w-full"> <strong>Location:</strong> {c.customerAddress}</span>
                                   )}
                                 </div>
                               )}

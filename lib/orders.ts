@@ -52,11 +52,12 @@ export interface UpdateOrderStatusOptions {
 
 // Helper to generate a modern Futuremilestone-branded HTML email
 function getEmailTemplate(title: string, messageHtml: string): string {
+  const logoUrl = "https://res.cloudinary.com/dhkf4qmql/image/upload/futuremilestone/futuremilestone_logo.png";
   return `
     <div style="font-family: 'DM Sans', -apple-system, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; border: 1px solid #ececec; border-radius: 16px; background-color: #ffffff; color: #0e1011;">
       <div style="text-align: center; border-bottom: 1px solid #ececec; padding-bottom: 20px; margin-bottom: 25px;">
+        <img src="${logoUrl}" alt="Future Milestone" width="42" height="34" style="display: block; margin: 0 auto 10px auto; width: 42px; height: auto; border: 0;" />
         <h2 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #0e1011;">futuremilestone</h2>
-        <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: #0e101199; display: block; margin-top: 4px;">Future Milestone</span>
       </div>
       <h3 style="font-size: 18px; font-weight: 600; margin-top: 0; margin-bottom: 15px; color: #0e1011; letter-spacing: -0.01em;">${title}</h3>
       <div style="font-size: 14px; line-height: 1.6; color: #0e101199; margin-bottom: 25px;">
@@ -66,6 +67,82 @@ function getEmailTemplate(title: string, messageHtml: string): string {
         <p style="margin: 0;">This is an automated notification from Futuremilestone. Please do not reply directly to this email.</p>
         <p style="margin: 5px 0 0 0;">&copy; ${new Date().getFullYear()} Futuremilestone Furnitures. All rights reserved.</p>
       </div>
+    </div>
+  `;
+}
+
+function formatOrderItemsTable(items: any[], currencySymbol = "₹"): string {
+  if (!items || !Array.isArray(items) || items.length === 0) return "";
+
+  const storeUrl = process.env.NEXT_PUBLIC_STORE_URL || "https://futuremilestone.shop";
+
+  const rows = items
+    .map((item) => {
+      const rawImg = item.image || item.imageUrl || item.thumbnail;
+      let imgUrl = "https://res.cloudinary.com/dhkf4qmql/image/upload/futuremilestone/futuremilestone_logo.png";
+      if (rawImg) {
+        if (rawImg.startsWith("http://") || rawImg.startsWith("https://")) {
+          imgUrl = rawImg;
+        } else {
+          imgUrl = `${storeUrl.replace(/\/$/, "")}${rawImg.startsWith("/") ? "" : "/"}${rawImg}`;
+        }
+      }
+
+      const name = item.name || item.title || "Product";
+      const specs = [item.material, item.dimension, item.selectedVariant].filter(Boolean).join(" • ");
+      const qty = item.quantity || 1;
+      const priceNum =
+        typeof item.price === "number"
+          ? item.price
+          : parseFloat(String(item.price).replace(/[^0-9.]/g, "")) || 0;
+      const totalNum = priceNum * qty;
+
+      const formattedPrice = priceNum
+        ? `${currencySymbol}${priceNum.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : "";
+      const formattedTotal = totalNum
+        ? `${currencySymbol}${totalNum.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+        : "";
+
+      return `
+        <tr style="border-bottom: 1px solid #f0f0f0;">
+          <td style="padding: 12px 8px; vertical-align: middle; width: 64px;">
+            <img src="${imgUrl}" alt="${name}" width="56" height="56" style="width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid #eeeeee; display: block;" />
+          </td>
+          <td style="padding: 12px 8px; vertical-align: middle;">
+            <div style="font-weight: 600; font-size: 14px; color: #0e1011; line-height: 1.3;">${name}</div>
+            ${specs ? `<div style="font-size: 11px; color: #0e101180; margin-top: 3px; line-height: 1.3;">${specs}</div>` : ""}
+          </td>
+          <td style="padding: 12px 8px; vertical-align: middle; text-align: center; font-size: 13px; color: #0e101199; font-weight: 500;">
+            ${qty}
+          </td>
+          <td style="padding: 12px 8px; vertical-align: middle; text-align: right; font-size: 13px; color: #0e101199; font-weight: 500; white-space: nowrap;">
+            ${formattedPrice}
+          </td>
+          <td style="padding: 12px 8px; vertical-align: middle; text-align: right; font-size: 13.5px; color: #0e1011; font-weight: 700; white-space: nowrap;">
+            ${formattedTotal}
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  return `
+    <div style="margin: 20px 0; background-color: #fafafa; border: 1px solid #ececec; border-radius: 12px; padding: 16px; overflow: hidden;">
+      <h4 style="margin: 0 0 12px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #0e101199;">Ordered Items</h4>
+      <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+          <tr style="border-bottom: 1.5px solid #ececec; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #0e101166;">
+            <th style="padding: 0 8px 8px 8px;" colspan="2">Item</th>
+            <th style="padding: 0 8px 8px 8px; text-align: center;">Qty</th>
+            <th style="padding: 0 8px 8px 8px; text-align: right;">Price</th>
+            <th style="padding: 0 8px 8px 8px; text-align: right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
     </div>
   `;
 }
@@ -204,9 +281,22 @@ function generateStatusEmail(status: string, order: OrderDetail, options: Update
       `;
   }
 
+  const itemsTableHtml = formatOrderItemsTable(order.items, order.currencySymbol || "₹");
+  const formattedTotal = order.total
+    ? typeof order.total === "number"
+      ? `${order.currencySymbol || "₹"}${order.total.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+      : order.total
+    : "";
+
+  const fullBody = `
+    ${body}
+    ${itemsTableHtml}
+    ${formattedTotal ? `<div style="text-align: right; font-size: 14.5px; font-weight: 700; color: #0e1011; margin-top: 15px; padding-top: 10px; border-top: 1px solid #ececec;">Total Amount: <span style="font-size: 16px; color: #0e1011;">${formattedTotal}</span></div>` : ""}
+  `;
+
   return {
     subject,
-    html: getEmailTemplate(title, body)
+    html: getEmailTemplate(title, fullBody)
   };
 }
 
