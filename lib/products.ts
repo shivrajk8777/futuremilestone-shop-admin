@@ -29,7 +29,20 @@ const productSchema = z.object({
   introText: z.string().trim().min(1, "Intro text is required."),
   description: z.string().trim().min(1, "Description is required."),
   materials: z.array(materialSchema).min(1, "Add at least one material."),
-  dimensions: z.array(dimensionSchema).min(1, "Add at least one dimension."),
+  dimensions: z
+    .array(dimensionSchema)
+    .min(1, "Add at least one dimension.")
+    .refine(
+      (items) => {
+        const labels = items
+          .map((item) => item.label.trim().toLowerCase())
+          .filter(Boolean);
+        return new Set(labels).size === labels.length;
+      },
+      {
+        message: "Duplicate dimension labels are not allowed in Dimensions and pricing.",
+      },
+    ),
   galleryImages: z.array(z.string().trim().min(1)).optional(),
   favorite: z.boolean().optional(),
   details: z.array(detailSectionSchema).optional(),

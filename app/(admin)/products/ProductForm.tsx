@@ -269,6 +269,19 @@ export default function ProductForm({
   const mainInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
 
+  const duplicateDimensionLabels = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const d of form.dimensions) {
+      const key = d.label.trim().toLowerCase();
+      if (key) {
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    }
+    return new Set(
+      Object.keys(counts).filter((key) => counts[key] > 1)
+    );
+  }, [form.dimensions]);
+
   const payload = useMemo(
     () =>
       JSON.stringify({
@@ -1034,45 +1047,77 @@ export default function ProductForm({
         </div>
 
         <div className="grid gap-3">
-          {form.dimensions.map((dimension, index) => (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-futuremilestone-panel-strong border border-futuremilestone-soft-line" key={dimension.id}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                <div className="grid gap-2.5">
-                  <label className="text-[14px] font-semibold" htmlFor={`dimension-label-${dimension.id}`}>Dimension {index + 1}</label>
-                  <input
-                    id={`dimension-label-${dimension.id}`}
-                    onChange={(event) =>
-                      updateDimension(dimension.id, "label", event.target.value)
-                    }
-                    type="text"
-                    value={dimension.label}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="grid gap-2.5">
-                  <label className="text-[14px] font-semibold" htmlFor={`dimension-price-${dimension.id}`}>Price ($ USD)</label>
-                  <input
-                    id={`dimension-price-${dimension.id}`}
-                    min="0"
-                    onChange={(event) =>
-                      updateDimension(dimension.id, "price", event.target.value)
-                    }
-                    step="0.01"
-                    type="number"
-                    value={dimension.price}
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-              <button
-                className="p-0 border-0 bg-transparent text-futuremilestone-muted hover:text-futuremilestone-ink cursor-pointer transition text-[14px] font-semibold"
-                onClick={() => removeDimension(dimension.id)}
-                type="button"
+          {form.dimensions.map((dimension, index) => {
+            const isDuplicate =
+              dimension.label.trim() !== "" &&
+              duplicateDimensionLabels.has(dimension.label.trim().toLowerCase());
+
+            return (
+              <div
+                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-futuremilestone-panel-strong border transition-all duration-200 ${
+                  isDuplicate
+                    ? "border-red-400 bg-red-500/5 shadow-sm"
+                    : "border-futuremilestone-soft-line"
+                }`}
+                key={dimension.id}
               >
-                Remove
-              </button>
-            </div>
-          ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                  <div className="grid gap-2.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[14px] font-semibold" htmlFor={`dimension-label-${dimension.id}`}>
+                        Dimension {index + 1}
+                      </label>
+                      {isDuplicate && (
+                        <span className="text-[12px] font-bold text-red-600 animate-pulse flex items-center gap-1">
+                          ⚠️ Duplicate Label
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      id={`dimension-label-${dimension.id}`}
+                      onChange={(event) =>
+                        updateDimension(dimension.id, "label", event.target.value)
+                      }
+                      type="text"
+                      value={dimension.label}
+                      className={`${inputClass} ${
+                        isDuplicate
+                          ? "!border-red-500 !bg-red-500/10 text-red-900 focus:!ring-red-500/20"
+                          : ""
+                      }`}
+                      placeholder="e.g., Small, Medium, Large"
+                    />
+                    {isDuplicate && (
+                      <p className="text-[12px] text-red-600 font-medium m-0 flex items-center gap-1">
+                        Dimension label must be unique. Change this label to save.
+                      </p>
+                    )}
+                  </div>
+                  <div className="grid gap-2.5">
+                    <label className="text-[14px] font-semibold" htmlFor={`dimension-price-${dimension.id}`}>Price ($ USD)</label>
+                    <input
+                      id={`dimension-price-${dimension.id}`}
+                      min="0"
+                      onChange={(event) =>
+                        updateDimension(dimension.id, "price", event.target.value)
+                      }
+                      step="0.01"
+                      type="number"
+                      value={dimension.price}
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+                <button
+                  className="p-0 border-0 bg-transparent text-futuremilestone-muted hover:text-futuremilestone-ink cursor-pointer transition text-[14px] font-semibold"
+                  onClick={() => removeDimension(dimension.id)}
+                  type="button"
+                >
+                  Remove
+                </button>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -1247,17 +1292,30 @@ export default function ProductForm({
         </div>
       </section>
 
-      <div className="flex justify-end mt-2">
+      <div className="flex items-center justify-between mt-2">
+        <div>
+          {duplicateDimensionLabels.size > 0 && (
+            <p className="text-[13px] font-semibold text-red-600 m-0 flex items-center gap-1.5 animate-bounce">
+              ⚠️ Please fix duplicate dimension labels before saving.
+            </p>
+          )}
+        </div>
         <button
-          className="rounded-full px-6 py-3 border border-transparent bg-futuremilestone-accent text-futuremilestone-bg font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px]"
-          disabled={isPending || mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)}
+          className="rounded-full px-6 py-3 border border-transparent bg-futuremilestone-accent text-futuremilestone-bg font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={
+            isPending ||
+            mainUploading ||
+            galleryUploading ||
+            Object.values(detailsUploading).some(Boolean) ||
+            duplicateDimensionLabels.size > 0
+          }
           type="submit"
         >
-          {(isPending || mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)) ? (
-            (mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)) ? "Uploading..." : "Saving..."
-          ) : (
-            submitLabel
-          )}
+          {isPending || mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)
+            ? mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)
+              ? "Uploading..."
+              : "Saving..."
+            : submitLabel}
         </button>
       </div>
     </form>
