@@ -89,7 +89,7 @@ function formatOrderItemsTable(items: any[], currencySymbol = "₹"): string {
       }
 
       const name = item.name || item.title || "Product";
-      const specs = [item.material, item.dimension, item.selectedVariant].filter(Boolean).join(" • ");
+      const specs = [item.color || item.material, item.dimension, item.selectedVariant].filter(Boolean).join(" • ");
       const qty = item.quantity || 1;
       const priceNum =
         typeof item.price === "number"

@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState, useMemo, useState, useRef, ChangeEvent, DragEvent } from "react";
+import { useRouter } from "next/navigation";
+import Swal from "sweetalert2";
 import SwalMessageEffect from "../../../components/SwalMessageEffect";
 import { CollectionSelectItem } from "../../../lib/collections";
-import { ProductDetail, MaterialInput, DimensionInput, DetailSectionInput } from "../../../lib/products";
+import { ProductDetail, ColorVariantInput, MaterialInput, DimensionInput, DetailSectionInput } from "../../../lib/products";
 import { ProductActionState } from "./actions";
 
 const initialState: ProductActionState = { error: "" };
@@ -17,6 +19,15 @@ function createMaterial(): MaterialInput {
     id: uid("material"),
     name: "",
     stock: 0,
+  };
+}
+
+function createColor(name = ""): ColorVariantInput {
+  return {
+    id: uid("color"),
+    name,
+    image: "",
+    galleryImages: [],
   };
 }
 
@@ -38,8 +49,20 @@ function createDetailSection(): DetailSectionInput {
 }
 
 function normalizeInitialProduct(product?: ProductDetail | null) {
+  let colors: ColorVariantInput[] = [];
+
+  if (product?.colors && product.colors.length > 0) {
+    colors = product.colors.map((color) => ({
+      id: color.id ?? uid("color"),
+      name: color.name ?? "",
+      image: color.image ?? "",
+      galleryImages: Array.isArray(color.galleryImages) ? color.galleryImages : [],
+    }));
+  } else {
+    colors = [createColor("Default")];
+  }
+
   return {
-    imageUrl: product?.imageUrl ?? "",
     collectionId: product?.collectionId ?? "",
     name: product?.name ?? "",
     introText: product?.introText ?? "",
@@ -55,18 +78,18 @@ function normalizeInitialProduct(product?: ProductDetail | null) {
         ? product.materials.map((material) => ({
           id: material.id ?? uid("material"),
           name: material.name ?? "",
-          stock: material.stock ?? 0,
+          stock: Number(material.stock) || 0,
         }))
         : [createMaterial()],
+    colors,
     dimensions:
       product?.dimensions?.length
         ? product.dimensions.map((dimension) => ({
           id: dimension.id ?? uid("dimension"),
           label: dimension.label ?? "",
-          price: dimension.price ?? 0,
+          price: Number(dimension.price) || 0,
         }))
         : [createDimension()],
-    galleryImages: Array.isArray(product?.galleryImages) ? product.galleryImages : [],
     details:
       product?.details?.length
         ? product.details.map((detail) => ({
@@ -238,6 +261,45 @@ function StarIcon({ className = "" }: { className?: string }) {
   );
 }
 
+function PaletteIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="13.5" cy="6.5" r=".5" fill="currentColor" />
+      <circle cx="17.5" cy="10.5" r=".5" fill="currentColor" />
+      <circle cx="8.5" cy="7.5" r=".5" fill="currentColor" />
+      <circle cx="6.5" cy="12.5" r=".5" fill="currentColor" />
+      <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
+    </svg>
+  );
+}
+
+function CopyIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+      <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+    </svg>
+  );
+}
+
 export interface ProductFormProps {
   action: (state: ProductActionState, formData: FormData) => Promise<ProductActionState>;
   collections: CollectionSelectItem[];
@@ -255,19 +317,47 @@ export default function ProductForm({
   title,
   description,
 }: ProductFormProps) {
+  const router = useRouter();
   const [state, formAction, isPending] = useActionState(action, initialState);
   const [form, setForm] = useState(() => normalizeInitialProduct(product));
-  const [mainUploading, setMainUploading] = useState(false);
-  const [galleryUploading, setGalleryUploading] = useState(false);
+
+  async function handleDuplicate() {
+    if (!product?.id) return;
+    const result = await Swal.fire({
+      title: "Duplicate this product?",
+      text: "This will open the create product page pre-filled with this product's details (images excluded). No new database entry will be created until you save.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes, Duplicate",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#1e1e1e",
+      cancelButtonColor: "#71717a",
+      background: "#18181b",
+      color: "#f4f4f5",
+    });
+
+    if (result.isConfirmed) {
+      router.push(`/products/new?duplicateFrom=${product.id}`);
+    }
+  }
+
+  const [activeColorId, setActiveColorId] = useState<string>(() => form.colors[0]?.id || "");
+  const [colorSwatchUploading, setColorSwatchUploading] = useState<Record<string, boolean>>({});
+  const [colorGalleryUploading, setColorGalleryUploading] = useState<Record<string, boolean>>({});
+  const [isDraggingSwatch, setIsDraggingSwatch] = useState<Record<string, boolean>>({});
+  const [isDraggingGallery, setIsDraggingGallery] = useState<Record<string, boolean>>({});
   const [draggedGalleryIndex, setDraggedGalleryIndex] = useState<number | null>(null);
-  const [isDraggingMain, setIsDraggingMain] = useState(false);
-  const [isDraggingGallery, setIsDraggingGallery] = useState(false);
-  const [uploadError, setUploadError] = useState("");
+
   const [detailsUploading, setDetailsUploading] = useState<Record<string, boolean>>({});
   const [draggingDetails, setDraggingDetails] = useState<Record<string, boolean>>({});
+  const [uploadError, setUploadError] = useState("");
 
-  const mainInputRef = useRef<HTMLInputElement>(null);
+  const swatchInputRef = useRef<HTMLInputElement>(null);
   const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  const activeColor = useMemo(() => {
+    return form.colors.find((c) => c.id === activeColorId) || form.colors[0];
+  }, [form.colors, activeColorId]);
 
   const duplicateDimensionLabels = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -283,9 +373,19 @@ export default function ProductForm({
   }, [form.dimensions]);
 
   const payload = useMemo(
-    () =>
-      JSON.stringify({
-        imageUrl: form.imageUrl,
+    () => {
+      const normalizedColors = form.colors.map((color) => ({
+        id: color.id,
+        name: color.name.trim() || "Default",
+        image: color.image ?? "",
+        galleryImages: Array.isArray(color.galleryImages) ? color.galleryImages : [],
+      }));
+
+      const primaryImage = normalizedColors[0]?.image || normalizedColors[0]?.galleryImages?.[0] || "";
+      const allGalleryImages = normalizedColors.flatMap((c) => c.galleryImages);
+
+      return JSON.stringify({
+        imageUrl: primaryImage,
         collectionId: form.collectionId,
         name: form.name,
         introText: form.introText,
@@ -296,12 +396,13 @@ export default function ProductForm({
           name: material.name,
           stock: Number(material.stock) || 0,
         })),
+        colors: normalizedColors,
         dimensions: form.dimensions.map((dimension) => ({
           id: dimension.id,
           label: dimension.label,
           price: Number(dimension.price) || 0,
         })),
-        galleryImages: form.galleryImages,
+        galleryImages: allGalleryImages,
         details: form.details.map((detail) => ({
           id: detail.id,
           imageUrl: detail.imageUrl,
@@ -314,28 +415,21 @@ export default function ProductForm({
           dimensions: form.dimensionsInfo?.dimensions ?? "",
           weight: form.dimensionsInfo?.weight ?? "",
         },
-      }),
+      });
+    },
     [form],
   );
 
-  function updateField(field: string, value: any) {
-    setForm((current) => ({ ...current, [field]: value }));
+  function updateField<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
+    setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function updateMaterial(id: string, field: string, value: any) {
+  // --- Material Management ---
+  function updateMaterial(id: string, field: keyof MaterialInput, value: string) {
     setForm((current) => ({
       ...current,
       materials: current.materials.map((material) =>
         material.id === id ? { ...material, [field]: value } : material,
-      ),
-    }));
-  }
-
-  function updateDimension(id: string, field: string, value: any) {
-    setForm((current) => ({
-      ...current,
-      dimensions: current.dimensions.map((dimension) =>
-        dimension.id === id ? { ...dimension, [field]: value } : dimension,
       ),
     }));
   }
@@ -350,6 +444,49 @@ export default function ProductForm({
     }));
   }
 
+  // --- Color Variant Management ---
+  function addColorVariant() {
+    const newColor = createColor(`Color ${form.colors.length + 1}`);
+    setForm((current) => ({
+      ...current,
+      colors: [...current.colors, newColor],
+    }));
+    setActiveColorId(newColor.id);
+  }
+
+  function removeColorVariant(colorId: string) {
+    if (form.colors.length <= 1) {
+      setUploadError("You must have at least one color variant.");
+      return;
+    }
+    const updated = form.colors.filter((c) => c.id !== colorId);
+    setForm((current) => ({ ...current, colors: updated }));
+    if (activeColorId === colorId) {
+      setActiveColorId(updated[0]?.id || "");
+    }
+  }
+
+  function updateColorField<K extends keyof ColorVariantInput>(
+    colorId: string,
+    field: K,
+    value: ColorVariantInput[K]
+  ) {
+    setForm((current) => ({
+      ...current,
+      colors: current.colors.map((c) => (c.id === colorId ? { ...c, [field]: value } : c)),
+    }));
+  }
+
+  // --- Dimension Management ---
+  function updateDimension(id: string, field: keyof DimensionInput, value: string) {
+    setForm((current) => ({
+      ...current,
+      dimensions: current.dimensions.map((dimension) =>
+        dimension.id === id ? { ...dimension, [field]: value } : dimension,
+      ),
+    }));
+  }
+
   function removeDimension(id: string) {
     setForm((current) => ({
       ...current,
@@ -360,14 +497,8 @@ export default function ProductForm({
     }));
   }
 
-  function removeDetailSection(id: string) {
-    setForm((current) => ({
-      ...current,
-      details: current.details.filter((detail) => detail.id !== id),
-    }));
-  }
-
-  function updateDetailField(id: string, field: string, value: any) {
+  // --- Storytelling Detail Management ---
+  function updateDetailField(id: string, field: keyof DetailSectionInput, value: string) {
     setForm((current) => ({
       ...current,
       details: current.details.map((detail) =>
@@ -376,23 +507,23 @@ export default function ProductForm({
     }));
   }
 
-  async function uploadDetailImageFile(id: string, file?: File) {
-    if (!file) return;
+  function removeDetailSection(id: string) {
+    setForm((current) => ({
+      ...current,
+      details: current.details.filter((detail) => detail.id !== id),
+    }));
+  }
 
+  // --- Cloudinary Uploads ---
+  async function uploadColorSwatchFile(colorId: string, file: File) {
+    setColorSwatchUploading((prev) => ({ ...prev, [colorId]: true }));
     setUploadError("");
-    setDetailsUploading((current) => ({ ...current, [id]: true }));
 
     try {
-      const signResponse = await fetch("/api/cloudinary/sign", {
-        method: "POST",
-      });
+      const signResponse = await fetch("/api/cloudinary/sign", { method: "POST" });
+      if (!signResponse.ok) throw new Error("Could not sign upload request.");
 
-      if (!signResponse.ok) {
-        throw new Error("Unable to prepare upload.");
-      }
-
-      const { apiKey, cloudName, folder, signature, timestamp } =
-        await signResponse.json();
+      const { apiKey, cloudName, folder, signature, timestamp } = await signResponse.json();
 
       const uploadData = new FormData();
       uploadData.append("file", file);
@@ -403,103 +534,29 @@ export default function ProductForm({
 
       const uploadResponse = await fetch(
         `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: uploadData,
-        },
+        { method: "POST", body: uploadData }
       );
 
-      if (!uploadResponse.ok) {
-        throw new Error("Image upload failed.");
-      }
+      if (!uploadResponse.ok) throw new Error("Swatch image upload failed.");
 
       const result = await uploadResponse.json();
-
-      setForm((current) => ({
-        ...current,
-        details: current.details.map((detail) =>
-          detail.id === id ? { ...detail, imageUrl: result.secure_url } : detail,
-        ),
-      }));
+      updateColorField(colorId, "image", result.secure_url);
     } catch (error) {
-      setUploadError(
-        error instanceof Error ? error.message : "Image upload failed.",
-      );
+      setUploadError(error instanceof Error ? error.message : "Swatch upload failed.");
     } finally {
-      setDetailsUploading((current) => ({ ...current, [id]: false }));
+      setColorSwatchUploading((prev) => ({ ...prev, [colorId]: false }));
     }
   }
 
-  async function uploadMainImageFile(file?: File) {
-    if (!file) return;
-
+  async function uploadColorGalleryFiles(colorId: string, files: FileList | File[]) {
+    setColorGalleryUploading((prev) => ({ ...prev, [colorId]: true }));
     setUploadError("");
-    setMainUploading(true);
 
     try {
-      const signResponse = await fetch("/api/cloudinary/sign", {
-        method: "POST",
-      });
+      const signResponse = await fetch("/api/cloudinary/sign", { method: "POST" });
+      if (!signResponse.ok) throw new Error("Could not sign upload request.");
 
-      if (!signResponse.ok) {
-        throw new Error("Unable to prepare upload.");
-      }
-
-      const { apiKey, cloudName, folder, signature, timestamp } =
-        await signResponse.json();
-
-      const uploadData = new FormData();
-      uploadData.append("file", file);
-      uploadData.append("api_key", apiKey);
-      uploadData.append("folder", folder);
-      uploadData.append("signature", signature);
-      uploadData.append("timestamp", String(timestamp));
-
-      const uploadResponse = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: uploadData,
-        },
-      );
-
-      if (!uploadResponse.ok) {
-        throw new Error("Image upload failed.");
-      }
-
-      const result = await uploadResponse.json();
-
-      setForm((current) => ({
-        ...current,
-        imageUrl: result.secure_url,
-      }));
-    } catch (error) {
-      setUploadError(
-        error instanceof Error ? error.message : "Image upload failed.",
-      );
-    } finally {
-      setMainUploading(false);
-    }
-  }
-
-  async function uploadGalleryFiles(files?: FileList | File[]) {
-    if (!files || files.length === 0) return;
-
-    setUploadError("");
-    setGalleryUploading(true);
-
-    try {
-      const signResponse = await fetch("/api/cloudinary/sign", {
-        method: "POST",
-      });
-
-      if (!signResponse.ok) {
-        throw new Error("Unable to prepare upload.");
-      }
-
-      const { apiKey, cloudName, folder, signature, timestamp } =
-        await signResponse.json();
-
+      const { apiKey, cloudName, folder, signature, timestamp } = await signResponse.json();
       const newUrls: string[] = [];
 
       for (const file of Array.from(files)) {
@@ -514,15 +571,10 @@ export default function ProductForm({
 
         const uploadResponse = await fetch(
           `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-          {
-            method: "POST",
-            body: uploadData,
-          },
+          { method: "POST", body: uploadData }
         );
 
-        if (!uploadResponse.ok) {
-          throw new Error("Image upload failed.");
-        }
+        if (!uploadResponse.ok) throw new Error("Gallery image upload failed.");
 
         const result = await uploadResponse.json();
         newUrls.push(result.secure_url);
@@ -530,31 +582,115 @@ export default function ProductForm({
 
       setForm((current) => ({
         ...current,
-        galleryImages: [...(current.galleryImages || []), ...newUrls],
+        colors: current.colors.map((c) => {
+          if (c.id !== colorId) return c;
+          const updatedGallery = [...(c.galleryImages || []), ...newUrls];
+          const updatedSwatch = c.image || updatedGallery[0] || "";
+          return {
+            ...c,
+            image: updatedSwatch,
+            galleryImages: updatedGallery,
+          };
+        }),
       }));
     } catch (error) {
-      setUploadError(
-        error instanceof Error ? error.message : "Gallery upload failed.",
-      );
+      setUploadError(error instanceof Error ? error.message : "Gallery upload failed.");
     } finally {
-      setGalleryUploading(false);
+      setColorGalleryUploading((prev) => ({ ...prev, [colorId]: false }));
     }
   }
 
-  async function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) {
-      await uploadMainImageFile(file);
+  async function uploadDetailImageFile(detailId: string, file: File) {
+    setDetailsUploading((curr) => ({ ...curr, [detailId]: true }));
+    setUploadError("");
+
+    try {
+      const signResponse = await fetch("/api/cloudinary/sign", { method: "POST" });
+      if (!signResponse.ok) throw new Error("Could not sign upload request.");
+
+      const { apiKey, cloudName, folder, signature, timestamp } = await signResponse.json();
+
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      uploadData.append("api_key", apiKey);
+      uploadData.append("folder", folder);
+      uploadData.append("signature", signature);
+      uploadData.append("timestamp", String(timestamp));
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: uploadData }
+      );
+
+      if (!uploadResponse.ok) throw new Error("Image upload failed.");
+
+      const result = await uploadResponse.json();
+      updateDetailField(detailId, "imageUrl", result.secure_url);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Detail image upload failed.");
+    } finally {
+      setDetailsUploading((curr) => ({ ...curr, [detailId]: false }));
     }
-    event.target.value = "";
   }
 
-  async function handleGalleryUpload(event: ChangeEvent<HTMLInputElement>) {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      await uploadGalleryFiles(files);
-    }
-    event.target.value = "";
+  // --- Color Gallery Operations ---
+  function removeColorGalleryImage(colorId: string, idx: number) {
+    setForm((current) => ({
+      ...current,
+      colors: current.colors.map((c) => {
+        if (c.id !== colorId) return c;
+        const newGallery = c.galleryImages.filter((_, i) => i !== idx);
+        let newImage = c.image;
+        if (c.image === c.galleryImages[idx]) {
+          newImage = newGallery[0] || "";
+        }
+        return {
+          ...c,
+          image: newImage,
+          galleryImages: newGallery,
+        };
+      }),
+    }));
+  }
+
+  function moveColorGalleryImage(colorId: string, fromIndex: number, toIndex: number) {
+    setForm((current) => ({
+      ...current,
+      colors: current.colors.map((c) => {
+        if (c.id !== colorId) return c;
+        if (toIndex < 0 || toIndex >= c.galleryImages.length) return c;
+        const updated = [...c.galleryImages];
+        const [moved] = updated.splice(fromIndex, 1);
+        updated.splice(toIndex, 0, moved);
+        return { ...c, galleryImages: updated };
+      }),
+    }));
+  }
+
+  function handleColorGalleryDragStart(e: DragEvent<HTMLDivElement>, index: number) {
+    e.stopPropagation();
+    setDraggedGalleryIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  }
+
+  function handleColorGalleryDragOver(colorId: string, e: DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedGalleryIndex === null || draggedGalleryIndex === index) return;
+
+    setForm((current) => ({
+      ...current,
+      colors: current.colors.map((c) => {
+        if (c.id !== colorId) return c;
+        const newList = [...c.galleryImages];
+        const item = newList[draggedGalleryIndex];
+        newList.splice(draggedGalleryIndex, 1);
+        newList.splice(index, 0, item);
+        return { ...c, galleryImages: newList };
+      }),
+    }));
+    setDraggedGalleryIndex(index);
   }
 
   function handleDragOver(e: DragEvent<HTMLElement>) {
@@ -562,358 +698,45 @@ export default function ProductForm({
     e.stopPropagation();
   }
 
-  function handleDragEnterMain(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingMain(true);
-  }
+  const inputClass =
+    "w-full border border-futuremilestone-ink/10 rounded-[18px] bg-futuremilestone-input-bg px-[18px] py-4 text-futuremilestone-ink outline-none transition-all duration-[160ms] focus:border-futuremilestone-ink/25 focus:ring-4 focus:ring-futuremilestone-ink/6 text-[14px]";
 
-  function handleDragLeaveMain(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingMain(false);
-  }
-
-  async function handleDropMain(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingMain(false);
-
-    const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      await uploadMainImageFile(file);
-    }
-  }
-
-  function handleDragEnterGallery(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingGallery(true);
-  }
-
-  function handleDragLeaveGallery(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingGallery(false);
-  }
-
-  async function handleDropGallery(e: DragEvent<HTMLDivElement>) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDraggingGallery(false);
-
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      await uploadGalleryFiles(files);
-    }
-  }
-
-  function removeGalleryImage(idx: number) {
-    setForm((current) => ({
-      ...current,
-      galleryImages: current.galleryImages.filter((_, i) => i !== idx),
-    }));
-  }
-
-  function moveGalleryImage(fromIndex: number, toIndex: number) {
-    if (toIndex < 0 || toIndex >= form.galleryImages.length) return;
-    setForm((current) => {
-      const updated = [...current.galleryImages];
-      const [movedItem] = updated.splice(fromIndex, 1);
-      updated.splice(toIndex, 0, movedItem);
-      return { ...current, galleryImages: updated };
-    });
-  }
-
-  function handleGalleryItemDragStart(e: DragEvent<HTMLDivElement>, index: number) {
-    e.stopPropagation();
-    setDraggedGalleryIndex(index);
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", String(index));
-  }
-
-  function handleGalleryItemDragOver(e: DragEvent<HTMLDivElement>, index: number) {
-    e.preventDefault();
-    e.stopPropagation();
-    if (draggedGalleryIndex === null || draggedGalleryIndex === index) return;
-
-    const newList = [...form.galleryImages];
-    const item = newList[draggedGalleryIndex];
-    newList.splice(draggedGalleryIndex, 1);
-    newList.splice(index, 0, item);
-
-    setDraggedGalleryIndex(index);
-    setForm((current) => ({ ...current, galleryImages: newList }));
-  }
-
-  function handleGalleryItemDragEnd(e: DragEvent<HTMLDivElement>) {
-    e.stopPropagation();
-    setDraggedGalleryIndex(null);
-  }
-
-  const inputClass = "w-full border border-futuremilestone-ink/10 rounded-[18px] bg-futuremilestone-input-bg px-[18px] py-4 text-futuremilestone-ink outline-none transition-all duration-[160ms] focus:border-futuremilestone-ink/25 focus:ring-4 focus:ring-futuremilestone-ink/6 text-[14px]";
+  const isAnyUploading =
+    Object.values(colorSwatchUploading).some(Boolean) ||
+    Object.values(colorGalleryUploading).some(Boolean) ||
+    Object.values(detailsUploading).some(Boolean);
 
   return (
-    <form action={formAction} className="grid gap-3">
+    <form action={formAction} className="grid gap-4">
       <SwalMessageEffect message={state?.error} type="error" />
       <SwalMessageEffect message={uploadError} type="error" />
       <input name="productPayload" type="hidden" value={payload} />
 
+      {/* Product General Info */}
       <section className="p-[18px] sm:p-[22px] bg-futuremilestone-panel/72 border border-futuremilestone-soft-line backdrop-blur-[14px] rounded-[32px] shadow-futuremilestone-soft">
-        <div className="flex items-end justify-between gap-4 mb-[18px]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">{title}</h2>
             <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">{description}</p>
           </div>
+          {product?.id && (
+            <button
+              type="button"
+              onClick={handleDuplicate}
+              className="rounded-full px-5 py-2.5 border border-futuremilestone-line bg-futuremilestone-panel-strong text-futuremilestone-ink font-semibold text-center transition hover:bg-futuremilestone-accent hover:text-futuremilestone-bg active:scale-[0.98] cursor-pointer inline-flex items-center gap-2 text-[13px] self-start sm:self-auto shadow-sm"
+              title="Duplicate this product without images"
+            >
+              <CopyIcon className="w-4 h-4" />
+              <span>Duplicate</span>
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="grid gap-2.5 md:col-span-2">
-            <label className="text-[14px] font-semibold text-futuremilestone-ink">Product image</label>
-
-            <input
-              accept="image/*"
-              className="hidden"
-              disabled={mainUploading}
-              id="productImageUpload"
-              onChange={handleImageUpload}
-              ref={mainInputRef}
-              type="file"
-            />
-
-            <div
-              onDragOver={handleDragOver}
-              onDragEnter={handleDragEnterMain}
-              onDragLeave={handleDragLeaveMain}
-              onDrop={handleDropMain}
-              onClick={() => !mainUploading && mainInputRef.current?.click()}
-              className={`relative flex flex-col items-center justify-center min-h-[220px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${isDraggingMain
-                  ? "border-futuremilestone-accent bg-futuremilestone-accent/5 scale-[0.99]"
-                  : "border-futuremilestone-line bg-futuremilestone-panel/40 hover:border-futuremilestone-accent/40 hover:bg-futuremilestone-panel/60"
-                }`}
-            >
-              {mainUploading ? (
-                <div className="flex flex-col items-center justify-center gap-3 animate-pulse">
-                  <div className="w-12 h-12 rounded-full bg-futuremilestone-accent/5 flex items-center justify-center text-futuremilestone-accent animate-pulse">
-                    <SpinnerIcon className="w-6 h-6" />
-                  </div>
-                  <span className="text-futuremilestone-ink font-medium text-[13px]">Uploading image...</span>
-                </div>
-              ) : form.imageUrl ? (
-                <div className="absolute inset-0 w-full h-full group">
-                  <img
-                    alt={form.name || "Product preview"}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    src={form.imageUrl}
-                  />
-                  <div className="absolute inset-0 bg-futuremilestone-ink/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-[2px]">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        mainInputRef.current?.click();
-                      }}
-                      className="px-4 py-2 bg-futuremilestone-panel-strong text-futuremilestone-ink rounded-full text-[13px] font-semibold hover:bg-futuremilestone-accent hover:text-futuremilestone-bg transition duration-200 shadow-lg transform translate-y-2 group-hover:translate-y-0 duration-300"
-                    >
-                      Change image
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        updateField("imageUrl", "");
-                      }}
-                      className="w-9 h-9 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition duration-200 transform translate-y-2 group-hover:translate-y-0 duration-300 delay-75"
-                      title="Remove image"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center text-center gap-3 group">
-                  <div className="w-12 h-12 rounded-2xl bg-futuremilestone-accent-soft text-futuremilestone-accent flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-futuremilestone-accent group-hover:text-white group-hover:shadow-md animate-bounce">
-                    <CloudUploadIcon className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[14px] font-semibold text-futuremilestone-ink m-0">
-                      Drag & drop image here, or <span className="text-futuremilestone-accent underline font-bold">browse</span>
-                    </p>
-                    <p className="text-[12px] text-futuremilestone-muted m-0">
-                      Supports JPG, PNG, WEBP, GIF
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-2.5 md:col-span-2">
-            <label className="text-[14px] font-semibold text-futuremilestone-ink">Product gallery images</label>
-
-            <input
-              accept="image/*"
-              className="hidden"
-              disabled={galleryUploading}
-              id="galleryImageUpload"
-              multiple
-              onChange={handleGalleryUpload}
-              ref={galleryInputRef}
-              type="file"
-            />
-
-            <div
-              onDragOver={handleDragOver}
-              onDragEnter={handleDragEnterGallery}
-              onDragLeave={handleDragLeaveGallery}
-              onDrop={handleDropGallery}
-              onClick={() => !galleryUploading && galleryInputRef.current?.click()}
-              className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${isDraggingGallery
-                  ? "border-futuremilestone-accent bg-futuremilestone-accent/5 scale-[0.99]"
-                  : "border-futuremilestone-line bg-futuremilestone-panel/40 hover:border-futuremilestone-accent/40 hover:bg-futuremilestone-panel/60"
-                }`}
-            >
-              {galleryUploading ? (
-                <div className="flex flex-col items-center justify-center gap-3 animate-pulse">
-                  <div className="w-12 h-12 rounded-full bg-futuremilestone-accent/5 flex items-center justify-center text-futuremilestone-accent animate-pulse">
-                    <SpinnerIcon className="w-6 h-6" />
-                  </div>
-                  <span className="text-futuremilestone-ink font-medium text-[13px]">Uploading gallery images...</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center text-center gap-3 group">
-                  <div className="w-12 h-12 rounded-2xl bg-futuremilestone-accent-soft text-futuremilestone-accent flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-futuremilestone-accent group-hover:text-white group-hover:shadow-md animate-bounce">
-                    <ImagesIcon className="w-6 h-6" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-[14px] font-semibold text-futuremilestone-ink m-0">
-                      Drag & drop gallery images here, or <span className="text-futuremilestone-accent underline font-bold">browse</span>
-                    </p>
-                    <p className="text-[12px] text-futuremilestone-muted m-0">
-                      Upload one or more additional images for the product detail page gallery
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {form.galleryImages && form.galleryImages.length > 0 ? (
-              <div className="space-y-2 mt-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-[12px] font-medium text-futuremilestone-muted flex items-center gap-1.5">
-                    <GripIcon className="w-3.5 h-3.5" /> Drag thumbnails to reorder or use arrows (← →)
-                  </span>
-                  <span className="text-[11px] font-semibold text-futuremilestone-ink/60 bg-futuremilestone-panel px-2.5 py-1 rounded-full border border-futuremilestone-soft-line">
-                    {form.galleryImages.length} {form.galleryImages.length === 1 ? "image" : "images"}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                  {form.galleryImages.map((url, idx) => {
-                    const isDragged = draggedGalleryIndex === idx;
-                    return (
-                      <div
-                        key={`${url}-${idx}`}
-                        draggable
-                        onDragStart={(e) => handleGalleryItemDragStart(e, idx)}
-                        onDragOver={(e) => handleGalleryItemDragOver(e, idx)}
-                        onDragEnd={handleGalleryItemDragEnd}
-                        className={`group relative aspect-square w-full rounded-[18px] overflow-hidden border bg-white shadow-sm transition-all duration-200 select-none cursor-grab active:cursor-grabbing ${
-                          isDragged
-                            ? "border-futuremilestone-accent ring-2 ring-futuremilestone-accent/30 scale-95 opacity-50 z-20"
-                            : "border-futuremilestone-soft-line hover:border-futuremilestone-accent/50 hover:shadow-md hover:-translate-y-0.5"
-                        }`}
-                      >
-                        <img
-                          src={url}
-                          alt={`Gallery image ${idx + 1}`}
-                          className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-105"
-                        />
-
-                        {/* Number Badge with Grip */}
-                        <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold rounded-full pointer-events-none shadow-sm transition-opacity duration-200 group-hover:opacity-0">
-                          <GripIcon className="w-3 h-3 text-white/80" />
-                          <span>{idx + 1}</span>
-                        </div>
-
-                        {/* Main Cover Image Indicator */}
-                        {form.imageUrl === url && (
-                          <div className="absolute top-2 right-2 px-2 py-0.5 bg-futuremilestone-accent text-white text-[10px] font-bold rounded-full shadow-sm flex items-center gap-1">
-                            <StarIcon className="w-2.5 h-2.5 fill-current" />
-                            Main
-                          </div>
-                        )}
-
-                        {/* Hover Overlay Controls */}
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-between p-2 backdrop-blur-[2px]">
-                          {/* Top row: Set as main cover image */}
-                          <div className="flex items-center justify-end">
-                            {form.imageUrl !== url && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  updateField("imageUrl", url);
-                                }}
-                                className="p-1.5 bg-white/90 hover:bg-white text-amber-600 hover:text-amber-700 rounded-full shadow-md transition-all transform scale-90 hover:scale-100"
-                                title="Set as main cover image"
-                              >
-                                <StarIcon className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Bottom row: Move Left, Remove, Move Right */}
-                          <div className="flex items-center justify-between gap-1 bg-black/60 backdrop-blur-md rounded-full p-1 border border-white/20">
-                            <button
-                              type="button"
-                              disabled={idx === 0}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveGalleryImage(idx, idx - 1);
-                              }}
-                              className="w-7 h-7 bg-white/90 hover:bg-white text-gray-800 disabled:opacity-30 disabled:hover:bg-white/90 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                              title="Move left"
-                            >
-                              <ArrowLeftIcon className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                removeGalleryImage(idx);
-                              }}
-                              className="w-7 h-7 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                              title="Remove image"
-                            >
-                              <TrashIcon className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={idx === (form.galleryImages?.length || 0) - 1}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                moveGalleryImage(idx, idx + 1);
-                              }}
-                              className="w-7 h-7 bg-white/90 hover:bg-white text-gray-800 disabled:opacity-30 disabled:hover:bg-white/90 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-                              title="Move right"
-                            >
-                              <ArrowRightIcon className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
-          </div>
-
           <div className="grid gap-2.5">
-            <label className="text-[14px] font-semibold" htmlFor="collectionId">Collection</label>
+            <label className="text-[14px] font-semibold" htmlFor="collectionId">
+              Collection
+            </label>
             <select
               id="collectionId"
               onChange={(event) => updateField("collectionId", event.target.value)}
@@ -930,48 +753,60 @@ export default function ProductForm({
           </div>
 
           <div className="grid gap-2.5">
-            <label className="text-[14px] font-semibold" htmlFor="name">Name</label>
+            <label className="text-[14px] font-semibold" htmlFor="name">
+              Product Name
+            </label>
             <input
               id="name"
               onChange={(event) => updateField("name", event.target.value)}
               type="text"
               value={form.name}
               className={inputClass}
+              placeholder="e.g., Elysian Minimalist Chair"
             />
           </div>
 
-          <div className="grid gap-2.5">
-            <label className="text-[14px] font-semibold" htmlFor="introText">Intro text</label>
+          <div className="grid gap-2.5 md:col-span-2">
+            <label className="text-[14px] font-semibold" htmlFor="introText">
+              Intro text
+            </label>
             <input
               id="introText"
               onChange={(event) => updateField("introText", event.target.value)}
               type="text"
               value={form.introText}
               className={inputClass}
+              placeholder="Short catchy tagline or brief overview"
             />
           </div>
 
           <div className="grid gap-2.5 md:col-span-2">
-            <label className="text-[14px] font-semibold" htmlFor="description">Description</label>
+            <label className="text-[14px] font-semibold" htmlFor="description">
+              Description
+            </label>
             <textarea
               id="description"
               onChange={(event) => updateField("description", event.target.value)}
-              rows={6}
+              rows={5}
               value={form.description}
               className={inputClass}
+              placeholder="Detailed description of the product and its craft..."
             />
           </div>
         </div>
       </section>
 
+      {/* Materials Section */}
       <section className="p-[18px] sm:p-[22px] bg-futuremilestone-panel/72 border border-futuremilestone-soft-line backdrop-blur-[14px] rounded-[32px] shadow-futuremilestone-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">Materials</h2>
-            <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">Add one or more materials and keep stock per material.</p>
+            <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">
+              Add one or more materials and keep stock per material.
+            </p>
           </div>
           <button
-            className="rounded-full px-[18px] py-3 border border-futuremilestone-line bg-futuremilestone-panel-strong text-futuremilestone-ink font-semibold text-center transition hover:bg-futuremilestone-accent hover:text-futuremilestone-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
+            className="rounded-full px-[18px] py-2.5 border border-futuremilestone-line bg-futuremilestone-panel-strong text-futuremilestone-ink font-semibold text-center transition hover:bg-futuremilestone-accent hover:text-futuremilestone-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
             onClick={() =>
               setForm((current) => ({
                 ...current,
@@ -986,10 +821,15 @@ export default function ProductForm({
 
         <div className="grid gap-3">
           {form.materials.map((material, index) => (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-futuremilestone-panel-strong border border-futuremilestone-soft-line" key={material.id}>
+            <div
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-futuremilestone-panel-strong border border-futuremilestone-soft-line"
+              key={material.id}
+            >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
                 <div className="grid gap-2.5">
-                  <label className="text-[14px] font-semibold" htmlFor={`material-name-${material.id}`}>Material {index + 1}</label>
+                  <label className="text-[14px] font-semibold" htmlFor={`material-name-${material.id}`}>
+                    Material {index + 1}
+                  </label>
                   <input
                     id={`material-name-${material.id}`}
                     onChange={(event) =>
@@ -998,10 +838,13 @@ export default function ProductForm({
                     type="text"
                     value={material.name}
                     className={inputClass}
+                    placeholder="e.g., Solid Teak, Walnut, Brass"
                   />
                 </div>
                 <div className="grid gap-2.5">
-                  <label className="text-[14px] font-semibold" htmlFor={`material-stock-${material.id}`}>Stock</label>
+                  <label className="text-[14px] font-semibold" htmlFor={`material-stock-${material.id}`}>
+                    Stock
+                  </label>
                   <input
                     id={`material-stock-${material.id}`}
                     min="0"
@@ -1026,14 +869,401 @@ export default function ProductForm({
         </div>
       </section>
 
+      {/* Color Variants & Color-Specific Galleries */}
+      <section className="p-[18px] sm:p-[22px] bg-futuremilestone-panel/72 border border-futuremilestone-soft-line backdrop-blur-[14px] rounded-[32px] shadow-futuremilestone-soft">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-futuremilestone-accent-soft text-futuremilestone-accent rounded-xl">
+                <PaletteIcon className="w-5 h-5" />
+              </div>
+              <h2 className="m-0 text-[24px] font-bold tracking-[-0.05em]">Color Variants & Galleries</h2>
+            </div>
+            <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">
+              Add colors and manage dedicated gallery images for each color.
+            </p>
+          </div>
+          <button
+            className="rounded-full px-[18px] py-2.5 border border-futuremilestone-line bg-futuremilestone-panel-strong text-futuremilestone-ink font-semibold text-center transition hover:bg-futuremilestone-accent hover:text-futuremilestone-bg active:scale-[0.98] cursor-pointer inline-flex items-center gap-2 text-[14px]"
+            onClick={addColorVariant}
+            type="button"
+          >
+            <span>+</span> Add Color Variant
+          </button>
+        </div>
+
+        {/* Color Tabs Header */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-6 border-b border-futuremilestone-soft-line">
+          {form.colors.map((c, index) => {
+            const isActive = c.id === (activeColor?.id || form.colors[0]?.id);
+            const imageCount = c.galleryImages?.length || 0;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => setActiveColorId(c.id)}
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-[18px] text-[13px] font-semibold transition-all duration-200 border cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? "bg-futuremilestone-accent text-futuremilestone-bg border-futuremilestone-accent shadow-md scale-[1.02]"
+                    : "bg-futuremilestone-panel-strong text-futuremilestone-ink border-futuremilestone-soft-line hover:border-futuremilestone-accent/40"
+                }`}
+              >
+                {c.image ? (
+                  <img
+                    src={c.image}
+                    alt={c.name}
+                    className="w-5 h-5 rounded-full object-cover border border-white/40"
+                  />
+                ) : (
+                  <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
+                )}
+                <span>{c.name.trim() || `Color ${index + 1}`}</span>
+                <span
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                    isActive ? "bg-black/20 text-white" : "bg-futuremilestone-ink/5 text-futuremilestone-muted"
+                  }`}
+                >
+                  {imageCount} {imageCount === 1 ? "img" : "imgs"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Active Color Details & Dedicated Gallery */}
+        {activeColor && (
+          <div className="space-y-6 bg-futuremilestone-panel-strong p-5 sm:p-6 rounded-[26px] border border-futuremilestone-soft-line">
+            <div className="flex items-center justify-between gap-4 border-b border-futuremilestone-soft-line pb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-[15px] font-bold text-futuremilestone-ink">
+                  Editing: <span className="text-futuremilestone-accent">{activeColor.name || "Unnamed Variant"}</span>
+                </span>
+              </div>
+              {form.colors.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeColorVariant(activeColor.id)}
+                  className="px-3 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white text-[12px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <TrashIcon className="w-3.5 h-3.5" />
+                  Remove Color
+                </button>
+              )}
+            </div>
+
+            {/* Color Name Field */}
+            <div className="grid gap-2">
+              <label className="text-[13px] font-semibold text-futuremilestone-ink" htmlFor={`color-name-${activeColor.id}`}>
+                Color / Finish Name
+              </label>
+              <input
+                id={`color-name-${activeColor.id}`}
+                onChange={(e) => updateColorField(activeColor.id, "name", e.target.value)}
+                type="text"
+                value={activeColor.name}
+                className={inputClass}
+                placeholder="e.g., Natural Oak, Matte Black, Walnut"
+              />
+            </div>
+
+            {/* Color Swatch / Preview Image Upload */}
+            <div className="grid gap-2 pt-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[13px] font-semibold text-futuremilestone-ink">
+                  Color Swatch / Cover Photo
+                </label>
+                <span className="text-[11px] text-futuremilestone-muted">
+                  Used as thumbnail chip on storefront or primary photo
+                </span>
+              </div>
+
+              <input
+                accept="image/*"
+                className="hidden"
+                disabled={colorSwatchUploading[activeColor.id]}
+                id={`swatch-upload-${activeColor.id}`}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) await uploadColorSwatchFile(activeColor.id, file);
+                  e.target.value = "";
+                }}
+                ref={swatchInputRef}
+                type="file"
+              />
+
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div
+                  onDragOver={handleDragOver}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    setIsDraggingSwatch((prev) => ({ ...prev, [activeColor.id]: true }));
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    setIsDraggingSwatch((prev) => ({ ...prev, [activeColor.id]: false }));
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault();
+                    setIsDraggingSwatch((prev) => ({ ...prev, [activeColor.id]: false }));
+                    const file = e.dataTransfer.files?.[0];
+                    if (file && file.type.startsWith("image/")) {
+                      await uploadColorSwatchFile(activeColor.id, file);
+                    }
+                  }}
+                  onClick={() => !colorSwatchUploading[activeColor.id] && swatchInputRef.current?.click()}
+                  className={`w-28 h-28 rounded-[20px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-200 flex-shrink-0 ${
+                    isDraggingSwatch[activeColor.id]
+                      ? "border-futuremilestone-accent bg-futuremilestone-accent/5 scale-95"
+                      : "border-futuremilestone-line bg-futuremilestone-panel/40 hover:border-futuremilestone-accent/40 hover:bg-futuremilestone-panel/60"
+                  }`}
+                >
+                  {colorSwatchUploading[activeColor.id] ? (
+                    <SpinnerIcon className="w-6 h-6 text-futuremilestone-accent" />
+                  ) : activeColor.image ? (
+                    <img
+                      src={activeColor.image}
+                      alt={activeColor.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center text-center p-2">
+                      <CloudUploadIcon className="w-5 h-5 text-futuremilestone-accent mb-1" />
+                      <span className="text-[10px] font-semibold text-futuremilestone-ink">Upload Swatch</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 text-xs text-futuremilestone-muted space-y-1.5">
+                  <p className="font-semibold text-futuremilestone-ink text-[13px] m-0">
+                    {activeColor.image ? "Swatch image active" : "No separate swatch image"}
+                  </p>
+                  <p className="m-0">
+                    Upload a dedicated texture/color swatch, or click the <StarIcon className="w-3 h-3 inline text-amber-500 fill-amber-500" /> on any gallery photo below to set it as this color&apos;s cover.
+                  </p>
+                  {activeColor.image && (
+                    <button
+                      type="button"
+                      onClick={() => updateColorField(activeColor.id, "image", "")}
+                      className="text-red-500 hover:text-red-600 font-semibold cursor-pointer underline text-[11px]"
+                    >
+                      Clear swatch image
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Gallery Images for this specific Color */}
+            <div className="grid gap-2.5 pt-4 border-t border-futuremilestone-soft-line">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-[14px] font-semibold text-futuremilestone-ink">
+                    Gallery Images for {activeColor.name || "this color"}
+                  </label>
+                  <p className="text-[12px] text-futuremilestone-muted m-0">
+                    Only these images will display on the storefront when users pick this color.
+                  </p>
+                </div>
+                <span className="text-[11px] font-semibold text-futuremilestone-ink/60 bg-futuremilestone-panel px-2.5 py-1 rounded-full border border-futuremilestone-soft-line">
+                  {activeColor.galleryImages?.length || 0} images
+                </span>
+              </div>
+
+              <input
+                accept="image/*"
+                className="hidden"
+                disabled={colorGalleryUploading[activeColor.id]}
+                id={`gallery-upload-${activeColor.id}`}
+                multiple
+                onChange={async (e) => {
+                  const files = e.target.files;
+                  if (files && files.length > 0) {
+                    await uploadColorGalleryFiles(activeColor.id, files);
+                  }
+                  e.target.value = "";
+                }}
+                ref={galleryInputRef}
+                type="file"
+              />
+
+              <div
+                onDragOver={handleDragOver}
+                onDragEnter={(e) => {
+                  e.preventDefault();
+                  setIsDraggingGallery((prev) => ({ ...prev, [activeColor.id]: true }));
+                }}
+                onDragLeave={(e) => {
+                  e.preventDefault();
+                  setIsDraggingGallery((prev) => ({ ...prev, [activeColor.id]: false }));
+                }}
+                onDrop={async (e) => {
+                  e.preventDefault();
+                  setIsDraggingGallery((prev) => ({ ...prev, [activeColor.id]: false }));
+                  const files = e.dataTransfer.files;
+                  if (files && files.length > 0) {
+                    await uploadColorGalleryFiles(activeColor.id, files);
+                  }
+                }}
+                onClick={() => !colorGalleryUploading[activeColor.id] && galleryInputRef.current?.click()}
+                className={`relative flex flex-col items-center justify-center min-h-[140px] rounded-[22px] border-2 border-dashed p-5 transition-all duration-300 cursor-pointer overflow-hidden ${
+                  isDraggingGallery[activeColor.id]
+                    ? "border-futuremilestone-accent bg-futuremilestone-accent/5 scale-[0.99]"
+                    : "border-futuremilestone-line bg-futuremilestone-panel/40 hover:border-futuremilestone-accent/40 hover:bg-futuremilestone-panel/60"
+                }`}
+              >
+                {colorGalleryUploading[activeColor.id] ? (
+                  <div className="flex flex-col items-center justify-center gap-2 animate-pulse">
+                    <div className="w-10 h-10 rounded-full bg-futuremilestone-accent/10 flex items-center justify-center text-futuremilestone-accent">
+                      <SpinnerIcon className="w-5 h-5" />
+                    </div>
+                    <span className="text-futuremilestone-ink font-medium text-[13px]">
+                      Uploading gallery photos for {activeColor.name}...
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center text-center gap-2 group">
+                    <div className="w-10 h-10 rounded-xl bg-futuremilestone-accent-soft text-futuremilestone-accent flex items-center justify-center transition-all duration-300 group-hover:scale-110">
+                      <ImagesIcon className="w-5 h-5" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[13px] font-semibold text-futuremilestone-ink m-0">
+                        Drag & drop gallery photos for <span className="text-futuremilestone-accent font-bold">{activeColor.name || "this color"}</span>, or <span className="underline font-bold">browse</span>
+                      </p>
+                      <p className="text-[11px] text-futuremilestone-muted m-0">
+                        Supports multiple JPG, PNG, WEBP files
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Gallery Grid for this Color */}
+              {activeColor.galleryImages && activeColor.galleryImages.length > 0 ? (
+                <div className="space-y-2 mt-2">
+                  <div className="flex items-center justify-between text-[12px] font-medium text-futuremilestone-muted">
+                    <span className="flex items-center gap-1.5">
+                      <GripIcon className="w-3.5 h-3.5" /> Drag thumbnails to reorder
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {activeColor.galleryImages.map((url, idx) => {
+                      const isDragged = draggedGalleryIndex === idx;
+                      const isSwatch = activeColor.image === url;
+                      return (
+                        <div
+                          key={`${url}-${idx}`}
+                          draggable
+                          onDragStart={(e) => handleColorGalleryDragStart(e, idx)}
+                          onDragOver={(e) => handleColorGalleryDragOver(activeColor.id, e, idx)}
+                          onDragEnd={() => setDraggedGalleryIndex(null)}
+                          className={`group relative aspect-square w-full rounded-[18px] overflow-hidden border bg-white shadow-sm transition-all duration-200 select-none cursor-grab active:cursor-grabbing ${
+                            isDragged
+                              ? "border-futuremilestone-accent ring-2 ring-futuremilestone-accent/30 scale-95 opacity-50 z-20"
+                              : "border-futuremilestone-soft-line hover:border-futuremilestone-accent/50 hover:shadow-md hover:-translate-y-0.5"
+                          }`}
+                        >
+                          <img
+                            src={url}
+                            alt={`Gallery ${idx + 1}`}
+                            className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-105"
+                          />
+
+                          {/* Index Badge */}
+                          <div className="absolute top-2 left-2 flex items-center gap-1 px-1.5 py-0.5 bg-black/60 backdrop-blur-md text-white text-[10px] font-semibold rounded-full pointer-events-none shadow-sm">
+                            <span>{idx + 1}</span>
+                          </div>
+
+                          {/* Swatch Indicator */}
+                          {isSwatch && (
+                            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-futuremilestone-accent text-white text-[9px] font-bold rounded-full shadow-sm flex items-center gap-0.5">
+                              <StarIcon className="w-2.5 h-2.5 fill-current" />
+                              Cover
+                            </div>
+                          )}
+
+                          {/* Hover Overlay Controls */}
+                          <div className="absolute inset-0 bg-black/45 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-between p-2 backdrop-blur-[2px]">
+                            {/* Top row: Set as Swatch */}
+                            <div className="flex items-center justify-end">
+                              {!isSwatch && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateColorField(activeColor.id, "image", url);
+                                  }}
+                                  className="p-1 bg-white/95 hover:bg-white text-amber-600 rounded-full shadow-md transition-transform hover:scale-110 cursor-pointer"
+                                  title="Set as cover/swatch photo"
+                                >
+                                  <StarIcon className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+
+                            {/* Bottom row: Move Left, Remove, Move Right */}
+                            <div className="flex items-center justify-between gap-1 bg-black/70 backdrop-blur-md rounded-full p-1 border border-white/20">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveColorGalleryImage(activeColor.id, idx, idx - 1);
+                                }}
+                                className="w-6 h-6 bg-white/90 hover:bg-white text-gray-800 disabled:opacity-30 rounded-full flex items-center justify-center transition-all cursor-pointer"
+                                title="Move left"
+                              >
+                                <ArrowLeftIcon className="w-3 h-3" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeColorGalleryImage(activeColor.id, idx);
+                                }}
+                                className="w-6 h-6 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all cursor-pointer"
+                                title="Remove photo"
+                              >
+                                <TrashIcon className="w-3 h-3" />
+                              </button>
+
+                              <button
+                                type="button"
+                                disabled={idx === activeColor.galleryImages.length - 1}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  moveColorGalleryImage(activeColor.id, idx, idx + 1);
+                                }}
+                                className="w-6 h-6 bg-white/90 hover:bg-white text-gray-800 disabled:opacity-30 rounded-full flex items-center justify-center transition-all cursor-pointer"
+                                title="Move right"
+                              >
+                                <ArrowRightIcon className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Dimensions & Pricing */}
       <section className="p-[18px] sm:p-[22px] bg-futuremilestone-panel/72 border border-futuremilestone-soft-line backdrop-blur-[14px] rounded-[32px] shadow-futuremilestone-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">Dimensions and pricing</h2>
-            <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">Each dimension entry carries its own selling price.</p>
+            <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">
+              Each dimension entry carries its own selling price.
+            </p>
           </div>
           <button
-            className="rounded-full px-[18px] py-3 border border-futuremilestone-line bg-futuremilestone-panel-strong text-futuremilestone-ink font-semibold text-center transition hover:bg-futuremilestone-accent hover:text-futuremilestone-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
+            className="rounded-full px-[18px] py-2.5 border border-futuremilestone-line bg-futuremilestone-panel-strong text-futuremilestone-ink font-semibold text-center transition hover:bg-futuremilestone-accent hover:text-futuremilestone-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
             onClick={() =>
               setForm((current) => ({
                 ...current,
@@ -1085,16 +1315,13 @@ export default function ProductForm({
                           ? "!border-red-500 !bg-red-500/10 text-red-900 focus:!ring-red-500/20"
                           : ""
                       }`}
-                      placeholder="e.g., Small, Medium, Large"
+                      placeholder="e.g., Standard, Large, King"
                     />
-                    {isDuplicate && (
-                      <p className="text-[12px] text-red-600 font-medium m-0 flex items-center gap-1">
-                        Dimension label must be unique. Change this label to save.
-                      </p>
-                    )}
                   </div>
                   <div className="grid gap-2.5">
-                    <label className="text-[14px] font-semibold" htmlFor={`dimension-price-${dimension.id}`}>Price ($ USD)</label>
+                    <label className="text-[14px] font-semibold" htmlFor={`dimension-price-${dimension.id}`}>
+                      Price ($ USD)
+                    </label>
                     <input
                       id={`dimension-price-${dimension.id}`}
                       min="0"
@@ -1121,14 +1348,17 @@ export default function ProductForm({
         </div>
       </section>
 
+      {/* Storytelling Details */}
       <section className="p-[18px] sm:p-[22px] bg-futuremilestone-panel/72 border border-futuremilestone-soft-line backdrop-blur-[14px] rounded-[32px] shadow-futuremilestone-soft">
         <div className="flex items-end justify-between gap-4 mb-[18px]">
           <div>
             <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">Storytelling Details</h2>
-            <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">Add dynamic detailed storytelling sections (alternating images and descriptions).</p>
+            <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">
+              Add dynamic storytelling sections (alternating images and descriptions).
+            </p>
           </div>
           <button
-            className="rounded-full px-[18px] py-3 border border-futuremilestone-line bg-futuremilestone-panel-strong text-futuremilestone-ink font-semibold text-center transition hover:bg-futuremilestone-accent hover:text-futuremilestone-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
+            className="rounded-full px-[18px] py-2.5 border border-futuremilestone-line bg-futuremilestone-panel-strong text-futuremilestone-ink font-semibold text-center transition hover:bg-futuremilestone-accent hover:text-futuremilestone-bg active:scale-[0.98] cursor-pointer inline-block text-[14px]"
             onClick={() =>
               setForm((current) => ({
                 ...current,
@@ -1143,7 +1373,10 @@ export default function ProductForm({
 
         <div className="grid gap-4">
           {form.details.map((detail, index) => (
-            <div className="flex flex-col gap-[18px] p-[18px] rounded-[22px] bg-futuremilestone-panel-strong border border-futuremilestone-soft-line" key={detail.id}>
+            <div
+              className="flex flex-col gap-[18px] p-[18px] rounded-[22px] bg-futuremilestone-panel-strong border border-futuremilestone-soft-line"
+              key={detail.id}
+            >
               <div className="flex items-center justify-between">
                 <span className="text-[15px] font-bold text-futuremilestone-ink">Section {index + 1}</span>
                 <button
@@ -1161,10 +1394,11 @@ export default function ProductForm({
 
                   <label
                     htmlFor={`detail-image-upload-${detail.id}`}
-                    className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${draggingDetails[detail.id]
+                    className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${
+                      draggingDetails[detail.id]
                         ? "border-futuremilestone-accent bg-futuremilestone-accent/5 scale-[0.99]"
                         : "border-futuremilestone-line bg-futuremilestone-panel/40 hover:border-futuremilestone-accent/40 hover:bg-futuremilestone-panel/60"
-                      }`}
+                    }`}
                     onDragOver={handleDragOver}
                     onDragEnter={(e) => {
                       e.preventDefault();
@@ -1202,7 +1436,7 @@ export default function ProductForm({
                     />
                     {detailsUploading[detail.id] ? (
                       <div className="flex flex-col items-center justify-center gap-3 animate-pulse">
-                        <div className="w-12 h-12 rounded-full bg-futuremilestone-accent/5 flex items-center justify-center text-futuremilestone-accent animate-pulse-ring">
+                        <div className="w-12 h-12 rounded-full bg-futuremilestone-accent/5 flex items-center justify-center text-futuremilestone-accent">
                           <SpinnerIcon className="w-6 h-6" />
                         </div>
                         <span className="text-futuremilestone-ink font-medium text-[13px]">Uploading image...</span>
@@ -1215,9 +1449,7 @@ export default function ProductForm({
                           src={detail.imageUrl}
                         />
                         <div className="absolute inset-0 bg-futuremilestone-ink/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4 backdrop-blur-[2px]">
-                          <span
-                            className="px-4 py-2 bg-futuremilestone-panel-strong text-futuremilestone-ink rounded-full text-[13px] font-semibold hover:bg-futuremilestone-accent hover:text-futuremilestone-bg transition duration-200 shadow-lg transform translate-y-2 group-hover:translate-y-0 duration-300"
-                          >
+                          <span className="px-4 py-2 bg-futuremilestone-panel-strong text-futuremilestone-ink rounded-full text-[13px] font-semibold hover:bg-futuremilestone-accent hover:text-futuremilestone-bg transition duration-200 shadow-lg">
                             Change image
                           </span>
                           <button
@@ -1227,7 +1459,7 @@ export default function ProductForm({
                               e.stopPropagation();
                               updateDetailField(detail.id, "imageUrl", "");
                             }}
-                            className="w-9 h-9 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition duration-200 transform translate-y-2 group-hover:translate-y-0 duration-300 delay-75 inline-flex items-center justify-center border-none"
+                            className="w-9 h-9 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition duration-200"
                             title="Remove image"
                           >
                             <TrashIcon className="w-4 h-4" />
@@ -1236,16 +1468,14 @@ export default function ProductForm({
                       </div>
                     ) : (
                       <div className="flex flex-col items-center justify-center text-center gap-3 group">
-                        <div className="w-12 h-12 rounded-2xl bg-futuremilestone-accent-soft text-futuremilestone-accent flex items-center justify-center transition-all duration-300 group-hover:scale-110 group-hover:bg-futuremilestone-accent group-hover:text-white group-hover:shadow-md animate-float">
+                        <div className="w-12 h-12 rounded-2xl bg-futuremilestone-accent-soft text-futuremilestone-accent flex items-center justify-center transition-all duration-300 group-hover:scale-110">
                           <CloudUploadIcon className="w-6 h-6" />
                         </div>
                         <div className="space-y-1">
                           <p className="text-[14px] font-semibold text-futuremilestone-ink m-0">
                             Drag & drop image here, or <span className="text-futuremilestone-accent underline font-bold">browse</span>
                           </p>
-                          <p className="text-[12px] text-futuremilestone-muted m-0">
-                            Supports JPG, PNG, WEBP, GIF
-                          </p>
+                          <p className="text-[12px] text-futuremilestone-muted m-0">Supports JPG, PNG, WEBP, GIF</p>
                         </div>
                       </div>
                     )}
@@ -1254,12 +1484,12 @@ export default function ProductForm({
 
                 <div className="grid gap-4 md:col-span-2">
                   <div className="grid gap-2.5">
-                    <label className="text-[14px] font-semibold" htmlFor={`detail-heading-${detail.id}`}>Heading</label>
+                    <label className="text-[14px] font-semibold" htmlFor={`detail-heading-${detail.id}`}>
+                      Heading
+                    </label>
                     <input
                       id={`detail-heading-${detail.id}`}
-                      onChange={(event) =>
-                        updateDetailField(detail.id, "heading", event.target.value)
-                      }
+                      onChange={(event) => updateDetailField(detail.id, "heading", event.target.value)}
                       type="text"
                       value={detail.heading}
                       className={inputClass}
@@ -1268,16 +1498,16 @@ export default function ProductForm({
                   </div>
 
                   <div className="grid gap-2.5">
-                    <label className="text-[14px] font-semibold" htmlFor={`detail-content-${detail.id}`}>Content</label>
+                    <label className="text-[14px] font-semibold" htmlFor={`detail-content-${detail.id}`}>
+                      Content
+                    </label>
                     <textarea
                       id={`detail-content-${detail.id}`}
-                      onChange={(event) =>
-                        updateDetailField(detail.id, "content", event.target.value)
-                      }
+                      onChange={(event) => updateDetailField(detail.id, "content", event.target.value)}
                       rows={4}
                       value={detail.content}
                       className={inputClass}
-                      placeholder="e.g., Tested and verified for ultimate posture support..."
+                      placeholder="e.g., Hand-crafted with sustainably sourced solid timber..."
                     />
                   </div>
                 </div>
@@ -1286,12 +1516,15 @@ export default function ProductForm({
           ))}
           {form.details.length === 0 && (
             <div className="text-center py-6 border border-dashed border-futuremilestone-line rounded-[22px] bg-futuremilestone-panel/40">
-              <p className="text-futuremilestone-muted text-[14px] m-0">No dynamic storytelling details added yet. Using default fallback sections.</p>
+              <p className="text-futuremilestone-muted text-[14px] m-0">
+                No dynamic storytelling details added yet.
+              </p>
             </div>
           )}
         </div>
       </section>
 
+      {/* Submit Button */}
       <div className="flex items-center justify-between mt-2">
         <div>
           {duplicateDimensionLabels.size > 0 && (
@@ -1301,21 +1534,11 @@ export default function ProductForm({
           )}
         </div>
         <button
-          className="rounded-full px-6 py-3 border border-transparent bg-futuremilestone-accent text-futuremilestone-bg font-semibold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px] disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={
-            isPending ||
-            mainUploading ||
-            galleryUploading ||
-            Object.values(detailsUploading).some(Boolean) ||
-            duplicateDimensionLabels.size > 0
-          }
+          className="rounded-full px-7 py-3.5 border border-transparent bg-futuremilestone-accent text-futuremilestone-bg font-bold text-center transition hover:bg-opacity-90 active:scale-[0.98] cursor-pointer text-[14px] disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+          disabled={isPending || isAnyUploading || duplicateDimensionLabels.size > 0}
           type="submit"
         >
-          {isPending || mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)
-            ? mainUploading || galleryUploading || Object.values(detailsUploading).some(Boolean)
-              ? "Uploading..."
-              : "Saving..."
-            : submitLabel}
+          {isPending || isAnyUploading ? (isAnyUploading ? "Uploading Images..." : "Saving...") : submitLabel}
         </button>
       </div>
     </form>

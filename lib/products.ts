@@ -3,6 +3,13 @@ import { z } from "zod";
 import { findCollectionSummaryById } from "./collections";
 import { getDatabase } from "./mongodb";
 
+const colorVariantSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1, "Color name is required."),
+  image: z.string().url("Enter a valid Cloudinary image URL.").or(z.literal("")).optional().default(""),
+  galleryImages: z.array(z.string().trim().min(1)).optional().default([]),
+});
+
 const materialSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1, "Material name is required."),
@@ -23,12 +30,13 @@ const detailSectionSchema = z.object({
 });
 
 const productSchema = z.object({
-  imageUrl: z.string().url("Enter a valid Cloudinary image URL."),
+  imageUrl: z.string().url("Enter a valid Cloudinary image URL.").or(z.literal("")).optional(),
   collectionId: z.string().min(1, "Select a collection."),
   name: z.string().trim().min(1, "Product name is required."),
   introText: z.string().trim().min(1, "Intro text is required."),
   description: z.string().trim().min(1, "Description is required."),
   materials: z.array(materialSchema).min(1, "Add at least one material."),
+  colors: z.array(colorVariantSchema).optional(),
   dimensions: z
     .array(dimensionSchema)
     .min(1, "Add at least one dimension.")
@@ -55,6 +63,7 @@ const productSchema = z.object({
 });
 
 export type ProductPayload = z.infer<typeof productSchema>;
+export type ColorVariantInput = z.infer<typeof colorVariantSchema>;
 export type MaterialInput = z.infer<typeof materialSchema>;
 export type DimensionInput = z.infer<typeof dimensionSchema>;
 export type DetailSectionInput = z.infer<typeof detailSectionSchema>;
@@ -91,6 +100,7 @@ export interface ProductDetail {
   description: string;
   slug: string;
   favorite: boolean;
+  colors: ColorVariantInput[];
   materials: MaterialInput[];
   dimensions: DimensionInput[];
   galleryImages: string[];
@@ -208,18 +218,31 @@ export async function getProductById(productId: string): Promise<ProductDetail |
     return null;
   }
 
+  let colors: ColorVariantInput[] = [];
+  if (Array.isArray(product.colors) && product.colors.length > 0) {
+    colors = product.colors.map((c: any) => ({
+      id: c.id || `color-${Math.random().toString(36).slice(2, 8)}`,
+      name: c.name || "",
+      image: c.image || "",
+      galleryImages: Array.isArray(c.galleryImages) ? c.galleryImages : [],
+    }));
+  }
+
   return {
     id: product._id.toString(),
-    imageUrl: product.imageUrl ?? "",
+    imageUrl: product.imageUrl ?? (colors[0]?.image || colors[0]?.galleryImages?.[0] || ""),
     collectionId: product.collectionId ?? "",
     name: product.name ?? "",
     introText: product.introText ?? "",
     description: product.description ?? "",
     slug: product.slug ?? "",
     favorite: product.favorite ?? false,
+    colors,
     materials: Array.isArray(product.materials) ? product.materials : [],
     dimensions: Array.isArray(product.dimensions) ? product.dimensions : [],
-    galleryImages: Array.isArray(product.galleryImages) ? product.galleryImages : [],
+    galleryImages: Array.isArray(product.galleryImages)
+      ? product.galleryImages
+      : colors.flatMap((c) => c.galleryImages),
     details: Array.isArray(product.details) ? product.details : [],
     dimensionsInfo: product.dimensionsInfo ?? {
       material: "",
@@ -252,8 +275,12 @@ export async function createProduct(input: unknown): Promise<{ id: string; slug:
     ? maxOrderDoc.order + 1
     : 0;
 
+  const colors = payload.colors || [];
+  const allGalleryImages = colors.flatMap((c) => c.galleryImages || []);
+  const mainImage = payload.imageUrl || colors[0]?.image || allGalleryImages[0] || "";
+
   const document = {
-    imageUrl: payload.imageUrl,
+    imageUrl: mainImage,
     collectionId: collectionSummary.id,
     collectionName: collectionSummary.name,
     collectionSlug: collectionSummary.slug,
@@ -264,8 +291,9 @@ export async function createProduct(input: unknown): Promise<{ id: string; slug:
     order: nextOrder,
     favorite: payload.favorite ?? false,
     materials: payload.materials,
+    colors,
     dimensions: payload.dimensions,
-    galleryImages: payload.galleryImages || [],
+    galleryImages: allGalleryImages,
     details: payload.details || [],
     dimensionsInfo: payload.dimensionsInfo ?? {
       material: "",
@@ -309,11 +337,15 @@ export async function updateProduct(productId: string, input: unknown): Promise<
       : 0;
   }
 
+  const colors = payload.colors || [];
+  const allGalleryImages = colors.flatMap((c) => c.galleryImages || []);
+  const mainImage = payload.imageUrl || colors[0]?.image || allGalleryImages[0] || "";
+
   await collection.updateOne(
     { _id: new ObjectId(productId) },
     {
       $set: {
-        imageUrl: payload.imageUrl,
+        imageUrl: mainImage,
         collectionId: collectionSummary.id,
         collectionName: collectionSummary.name,
         collectionSlug: collectionSummary.slug,
@@ -324,8 +356,9 @@ export async function updateProduct(productId: string, input: unknown): Promise<
         order: nextOrder,
         favorite: payload.favorite ?? false,
         materials: payload.materials,
+        colors,
         dimensions: payload.dimensions,
-        galleryImages: payload.galleryImages || [],
+        galleryImages: allGalleryImages,
         details: payload.details || [],
         dimensionsInfo: payload.dimensionsInfo ?? {
           material: "",

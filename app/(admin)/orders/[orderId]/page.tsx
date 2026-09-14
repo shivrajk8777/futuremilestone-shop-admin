@@ -135,7 +135,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
 
                       return (
                         <tr
-                          key={`${item.slug}-${item.material}-${item.dimension}`}
+                          key={`${item.slug}-${item.color || item.material}-${item.dimension}`}
                           className="hover:bg-futuremilestone-accent/2 transition-colors"
                         >
                           <td className="px-5 py-3">
@@ -171,7 +171,7 @@ export default async function OrderDetailsPage({ params }: OrderDetailsPageProps
                             </div>
                           </td>
                           <td className="px-5 py-3 text-futuremilestone-muted text-[12px] capitalize">
-                            {item.material} • {item.dimension}
+                            {item.color || item.material} • {item.dimension}
                           </td>
                           <td className="px-5 py-3 text-futuremilestone-muted">{formatOrderPrice(item.price, order.currencySymbol, order.currency)}</td>
                           <td className="px-5 py-3 text-futuremilestone-ink font-semibold">{item.quantity}</td>
