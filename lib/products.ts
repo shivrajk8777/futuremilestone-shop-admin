@@ -30,7 +30,7 @@ const productSchema = z.object({
   description: z.string().trim().min(1, "Description is required."),
   materials: z.array(materialSchema).min(1, "Add at least one material."),
   dimensions: z.array(dimensionSchema).min(1, "Add at least one dimension."),
-  galleryImages: z.array(z.string().url()).optional(),
+  galleryImages: z.array(z.string().trim().min(1)).optional(),
   favorite: z.boolean().optional(),
   details: z.array(detailSectionSchema).optional(),
   dimensionsInfo: z.object({
@@ -184,6 +184,10 @@ export async function listProducts(): Promise<ProductItem[]> {
 }
 
 export async function getProductById(productId: string): Promise<ProductDetail | null> {
+  if (!ObjectId.isValid(productId)) {
+    return null;
+  }
+
   const collection = await getProductsCollection();
   const product = await collection.findOne({ _id: new ObjectId(productId) });
 

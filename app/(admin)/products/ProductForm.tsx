@@ -165,6 +165,79 @@ function SpinnerIcon({ className = "" }: { className?: string }) {
   );
 }
 
+function ArrowLeftIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}
+
+function GripIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <circle cx="9" cy="5" r="1" />
+      <circle cx="9" cy="12" r="1" />
+      <circle cx="9" cy="19" r="1" />
+      <circle cx="15" cy="5" r="1" />
+      <circle cx="15" cy="12" r="1" />
+      <circle cx="15" cy="19" r="1" />
+    </svg>
+  );
+}
+
+function StarIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
 export interface ProductFormProps {
   action: (state: ProductActionState, formData: FormData) => Promise<ProductActionState>;
   collections: CollectionSelectItem[];
@@ -186,6 +259,7 @@ export default function ProductForm({
   const [form, setForm] = useState(() => normalizeInitialProduct(product));
   const [mainUploading, setMainUploading] = useState(false);
   const [galleryUploading, setGalleryUploading] = useState(false);
+  const [draggedGalleryIndex, setDraggedGalleryIndex] = useState<number | null>(null);
   const [isDraggingMain, setIsDraggingMain] = useState(false);
   const [isDraggingGallery, setIsDraggingGallery] = useState(false);
   const [uploadError, setUploadError] = useState("");
@@ -222,10 +296,10 @@ export default function ProductForm({
           content: detail.content,
         })),
         dimensionsInfo: {
-          material: form.dimensionsInfo.material,
-          finish: form.dimensionsInfo.finish,
-          dimensions: form.dimensionsInfo.dimensions,
-          weight: form.dimensionsInfo.weight,
+          material: form.dimensionsInfo?.material ?? "",
+          finish: form.dimensionsInfo?.finish ?? "",
+          dimensions: form.dimensionsInfo?.dimensions ?? "",
+          weight: form.dimensionsInfo?.weight ?? "",
         },
       }),
     [form],
@@ -528,6 +602,42 @@ export default function ProductForm({
     }));
   }
 
+  function moveGalleryImage(fromIndex: number, toIndex: number) {
+    if (toIndex < 0 || toIndex >= form.galleryImages.length) return;
+    setForm((current) => {
+      const updated = [...current.galleryImages];
+      const [movedItem] = updated.splice(fromIndex, 1);
+      updated.splice(toIndex, 0, movedItem);
+      return { ...current, galleryImages: updated };
+    });
+  }
+
+  function handleGalleryItemDragStart(e: DragEvent<HTMLDivElement>, index: number) {
+    e.stopPropagation();
+    setDraggedGalleryIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  }
+
+  function handleGalleryItemDragOver(e: DragEvent<HTMLDivElement>, index: number) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (draggedGalleryIndex === null || draggedGalleryIndex === index) return;
+
+    const newList = [...form.galleryImages];
+    const item = newList[draggedGalleryIndex];
+    newList.splice(draggedGalleryIndex, 1);
+    newList.splice(index, 0, item);
+
+    setDraggedGalleryIndex(index);
+    setForm((current) => ({ ...current, galleryImages: newList }));
+  }
+
+  function handleGalleryItemDragEnd(e: DragEvent<HTMLDivElement>) {
+    e.stopPropagation();
+    setDraggedGalleryIndex(null);
+  }
+
   const inputClass = "w-full border border-futuremilestone-ink/10 rounded-[18px] bg-futuremilestone-input-bg px-[18px] py-4 text-futuremilestone-ink outline-none transition-all duration-[160ms] focus:border-futuremilestone-ink/25 focus:ring-4 focus:ring-futuremilestone-ink/6 text-[14px]";
 
   return (
@@ -675,37 +785,116 @@ export default function ProductForm({
             </div>
 
             {form.galleryImages && form.galleryImages.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4 mt-4">
-                {form.galleryImages.map((url, idx) => (
-                  <div
-                    key={idx}
-                    className="group relative aspect-square w-full rounded-[18px] overflow-hidden border border-futuremilestone-soft-line bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
-                  >
-                    <img
-                      src={url}
-                      alt={`Gallery ${idx + 1}`}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
+              <div className="space-y-2 mt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-medium text-futuremilestone-muted flex items-center gap-1.5">
+                    <GripIcon className="w-3.5 h-3.5" /> Drag thumbnails to reorder or use arrows (← →)
+                  </span>
+                  <span className="text-[11px] font-semibold text-futuremilestone-ink/60 bg-futuremilestone-panel px-2.5 py-1 rounded-full border border-futuremilestone-soft-line">
+                    {form.galleryImages.length} {form.galleryImages.length === 1 ? "image" : "images"}
+                  </span>
+                </div>
 
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 bg-black/60 backdrop-blur-md text-white text-[11px] font-medium rounded-full pointer-events-none transition-opacity duration-200 group-hover:opacity-0">
-                      {idx + 1}
-                    </span>
-
-                    <div className="absolute inset-0 bg-futuremilestone-ink/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center backdrop-blur-[1px]">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeGalleryImage(idx);
-                        }}
-                        className="w-9 h-9 bg-white text-red-600 hover:bg-red-50 hover:scale-110 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 transform translate-y-2 group-hover:translate-y-0"
-                        title="Remove image"
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                  {form.galleryImages.map((url, idx) => {
+                    const isDragged = draggedGalleryIndex === idx;
+                    return (
+                      <div
+                        key={`${url}-${idx}`}
+                        draggable
+                        onDragStart={(e) => handleGalleryItemDragStart(e, idx)}
+                        onDragOver={(e) => handleGalleryItemDragOver(e, idx)}
+                        onDragEnd={handleGalleryItemDragEnd}
+                        className={`group relative aspect-square w-full rounded-[18px] overflow-hidden border bg-white shadow-sm transition-all duration-200 select-none cursor-grab active:cursor-grabbing ${
+                          isDragged
+                            ? "border-futuremilestone-accent ring-2 ring-futuremilestone-accent/30 scale-95 opacity-50 z-20"
+                            : "border-futuremilestone-soft-line hover:border-futuremilestone-accent/50 hover:shadow-md hover:-translate-y-0.5"
+                        }`}
                       >
-                        <TrashIcon className="w-4.5 h-4.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                        <img
+                          src={url}
+                          alt={`Gallery image ${idx + 1}`}
+                          className="w-full h-full object-cover pointer-events-none transition-transform duration-500 group-hover:scale-105"
+                        />
+
+                        {/* Number Badge with Grip */}
+                        <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 bg-black/60 backdrop-blur-md text-white text-[11px] font-semibold rounded-full pointer-events-none shadow-sm transition-opacity duration-200 group-hover:opacity-0">
+                          <GripIcon className="w-3 h-3 text-white/80" />
+                          <span>{idx + 1}</span>
+                        </div>
+
+                        {/* Main Cover Image Indicator */}
+                        {form.imageUrl === url && (
+                          <div className="absolute top-2 right-2 px-2 py-0.5 bg-futuremilestone-accent text-white text-[10px] font-bold rounded-full shadow-sm flex items-center gap-1">
+                            <StarIcon className="w-2.5 h-2.5 fill-current" />
+                            Main
+                          </div>
+                        )}
+
+                        {/* Hover Overlay Controls */}
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col justify-between p-2 backdrop-blur-[2px]">
+                          {/* Top row: Set as main cover image */}
+                          <div className="flex items-center justify-end">
+                            {form.imageUrl !== url && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateField("imageUrl", url);
+                                }}
+                                className="p-1.5 bg-white/90 hover:bg-white text-amber-600 hover:text-amber-700 rounded-full shadow-md transition-all transform scale-90 hover:scale-100"
+                                title="Set as main cover image"
+                              >
+                                <StarIcon className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Bottom row: Move Left, Remove, Move Right */}
+                          <div className="flex items-center justify-between gap-1 bg-black/60 backdrop-blur-md rounded-full p-1 border border-white/20">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveGalleryImage(idx, idx - 1);
+                              }}
+                              className="w-7 h-7 bg-white/90 hover:bg-white text-gray-800 disabled:opacity-30 disabled:hover:bg-white/90 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                              title="Move left"
+                            >
+                              <ArrowLeftIcon className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeGalleryImage(idx);
+                              }}
+                              className="w-7 h-7 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                              title="Remove image"
+                            >
+                              <TrashIcon className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              type="button"
+                              disabled={idx === (form.galleryImages?.length || 0) - 1}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                moveGalleryImage(idx, idx + 1);
+                              }}
+                              className="w-7 h-7 bg-white/90 hover:bg-white text-gray-800 disabled:opacity-30 disabled:hover:bg-white/90 rounded-full flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+                              title="Move right"
+                            >
+                              <ArrowRightIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             ) : null}
           </div>

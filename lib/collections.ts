@@ -149,6 +149,10 @@ export async function listCollectionsForSelect(): Promise<CollectionSelectItem[]
 }
 
 export async function getCollectionById(collectionId: string): Promise<CollectionDetail | null> {
+  if (!ObjectId.isValid(collectionId)) {
+    return null;
+  }
+
   const collection = await getCollectionsCollection();
   const item = await collection.findOne({ _id: new ObjectId(collectionId) });
 
