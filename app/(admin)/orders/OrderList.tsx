@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import * as XLSX from "xlsx";
 import { OrderItem } from "../../../lib/orders";
 import { formatOrderPrice } from "../../../lib/formatOrderPrice";
 
@@ -13,6 +14,68 @@ function formatDate(value: Date | string | number): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function handleExportExcel(ordersToExport: OrderItem[]) {
+  if (!ordersToExport || ordersToExport.length === 0) return;
+
+  const data = ordersToExport.map((order) => {
+    const totalItems =
+      order.items?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+
+    const itemsSummary = Array.isArray(order.items)
+      ? order.items
+          .map((item) => {
+            const specs = [
+              item.color || item.material,
+              item.dimension,
+              item.selectedVariant,
+            ]
+              .filter(Boolean)
+              .join(" ");
+            return `${item.name || item.title || "Product"}${
+              specs ? ` (${specs})` : ""
+            } x${item.quantity || 1}`;
+          })
+          .join("; ")
+      : "";
+
+    return {
+      "Order Number": order.orderNumber || "",
+      "Date": formatDate(order.createdAt),
+      "Customer Name": order.customerName || "",
+      "Customer Email": order.customerEmail || "",
+      "Total Items": totalItems,
+      "Total Amount": order.total,
+      "Currency": order.currencySymbol || order.currency || "₹",
+      "Payment Method": order.paymentMethod || "Online",
+      "Transaction ID":
+        order.transactionId || `TXN-${order.id.slice(-8).toUpperCase()}`,
+      "Status": order.status || "",
+      "Items Detail": itemsSummary,
+    };
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Orders");
+
+  worksheet["!cols"] = [
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 22 },
+    { wch: 28 },
+    { wch: 12 },
+    { wch: 14 },
+    { wch: 10 },
+    { wch: 16 },
+    { wch: 24 },
+    { wch: 14 },
+    { wch: 50 },
+  ];
+
+  const today = new Date().toISOString().split("T")[0];
+  XLSX.writeFile(workbook, `Orders_Export_${today}.xlsx`);
 }
 
 export interface OrderListProps {
@@ -80,23 +143,42 @@ export default function OrderList({ orders }: OrderListProps) {
     <div className="bg-futuremilestone-panel-strong border border-futuremilestone-soft-line rounded-[24px] overflow-hidden shadow-futuremilestone-soft">
       {/* Search and Page Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border-b border-futuremilestone-soft-line bg-futuremilestone-bg/20">
-        {/* Left Side: Entries count */}
-        <div className="flex items-center gap-2 text-[13px] text-futuremilestone-muted">
-          <span>Show</span>
-          <select
-            value={rowsPerPage}
-            onChange={(e) => {
-              setRowsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            className="bg-futuremilestone-panel-strong border border-futuremilestone-soft-line rounded-lg px-2.5 py-1 text-futuremilestone-ink font-medium focus:outline-none"
+        {/* Left Side: Entries count & Export Button */}
+        <div className="flex flex-wrap items-center gap-3 text-[13px]">
+          <div className="flex items-center gap-2 text-futuremilestone-muted">
+            <span>Show</span>
+            <select
+              value={rowsPerPage}
+              onChange={(e) => {
+                setRowsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="bg-futuremilestone-panel-strong border border-futuremilestone-soft-line rounded-lg px-2.5 py-1 text-futuremilestone-ink font-medium focus:outline-none"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+            </select>
+            <span>entries</span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleExportExcel(filteredOrders)}
+            disabled={filteredOrders.length === 0}
+            className="px-3.5 py-1.5 rounded-lg bg-emerald-600/15 hover:bg-emerald-600 text-emerald-700 dark:text-emerald-400 hover:text-white border border-emerald-600/30 text-[12px] font-semibold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap shadow-sm active:scale-[0.97] disabled:opacity-50 disabled:cursor-not-allowed"
+            title={`Export ${filteredOrders.length} order(s) to Excel`}
           >
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-          <span>entries</span>
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="8" y1="13" x2="16" y2="13" />
+              <line x1="8" y1="17" x2="16" y2="17" />
+              <line x1="10" y1="9" x2="12" y2="9" />
+            </svg>
+            <span>Export to Excel</span>
+          </button>
         </div>
 
         {/* Right Side: Filters & Search grouped together */}
