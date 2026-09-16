@@ -67,6 +67,7 @@ function normalizeInitialProduct(product?: ProductDetail | null) {
     name: product?.name ?? "",
     introText: product?.introText ?? "",
     description: product?.description ?? "",
+    imageUrl: product?.imageUrl ?? "",
     dimensionsInfo: {
       material: product?.dimensionsInfo?.material ?? "",
       finish: product?.dimensionsInfo?.finish ?? "",
@@ -348,6 +349,10 @@ export default function ProductForm({
   const [isDraggingGallery, setIsDraggingGallery] = useState<Record<string, boolean>>({});
   const [draggedGalleryIndex, setDraggedGalleryIndex] = useState<number | null>(null);
 
+  const [thumbnailUploading, setThumbnailUploading] = useState(false);
+  const [isDraggingThumbnail, setIsDraggingThumbnail] = useState(false);
+  const thumbnailInputRef = useRef<HTMLInputElement>(null);
+
   const [detailsUploading, setDetailsUploading] = useState<Record<string, boolean>>({});
   const [draggingDetails, setDraggingDetails] = useState<Record<string, boolean>>({});
   const [uploadError, setUploadError] = useState("");
@@ -515,6 +520,39 @@ export default function ProductForm({
   }
 
   // --- Cloudinary Uploads ---
+  async function uploadThumbnailFile(file: File) {
+    setThumbnailUploading(true);
+    setUploadError("");
+
+    try {
+      const signResponse = await fetch("/api/cloudinary/sign", { method: "POST" });
+      if (!signResponse.ok) throw new Error("Could not sign upload request.");
+
+      const { apiKey, cloudName, folder, signature, timestamp } = await signResponse.json();
+
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      uploadData.append("api_key", apiKey);
+      uploadData.append("folder", folder);
+      uploadData.append("signature", signature);
+      uploadData.append("timestamp", String(timestamp));
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        { method: "POST", body: uploadData }
+      );
+
+      if (!uploadResponse.ok) throw new Error("Thumbnail upload failed.");
+
+      const result = await uploadResponse.json();
+      updateField("imageUrl", result.secure_url);
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "Thumbnail upload failed.");
+    } finally {
+      setThumbnailUploading(false);
+    }
+  }
+
   async function uploadColorSwatchFile(colorId: string, file: File) {
     setColorSwatchUploading((prev) => ({ ...prev, [colorId]: true }));
     setUploadError("");
@@ -702,6 +740,7 @@ export default function ProductForm({
     "w-full border border-futuremilestone-ink/10 rounded-[18px] bg-futuremilestone-input-bg px-[18px] py-4 text-futuremilestone-ink outline-none transition-all duration-[160ms] focus:border-futuremilestone-ink/25 focus:ring-4 focus:ring-futuremilestone-ink/6 text-[14px]";
 
   const isAnyUploading =
+    thumbnailUploading ||
     Object.values(colorSwatchUploading).some(Boolean) ||
     Object.values(colorGalleryUploading).some(Boolean) ||
     Object.values(detailsUploading).some(Boolean);
@@ -793,6 +832,120 @@ export default function ProductForm({
               placeholder="Detailed description of the product and its craft..."
             />
           </div>
+        </div>
+      </section>
+
+      {/* Product Thumbnail / Cover Image */}
+      <section className="p-[18px] sm:p-[22px] bg-futuremilestone-panel/72 border border-futuremilestone-soft-line backdrop-blur-[14px] rounded-[32px] shadow-futuremilestone-soft">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-[18px]">
+          <div>
+            <h2 className="mt-1 mb-0 text-[24px] font-bold tracking-[-0.05em]">Product Thumbnail</h2>
+            <p className="mt-1 mb-0 text-futuremilestone-muted text-[14px]">
+              Upload a primary thumbnail image for this product.
+            </p>
+          </div>
+          {form.imageUrl && (
+            <button
+              type="button"
+              onClick={() => updateField("imageUrl", "")}
+              className="px-3.5 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white text-[12px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
+            >
+              <TrashIcon className="w-3.5 h-3.5" />
+              Remove Thumbnail
+            </button>
+          )}
+        </div>
+
+        <input
+          accept="image/*"
+          className="hidden"
+          disabled={thumbnailUploading}
+          id="product-thumbnail-upload"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            if (file) await uploadThumbnailFile(file);
+            e.target.value = "";
+          }}
+          ref={thumbnailInputRef}
+          type="file"
+        />
+
+        <div className="max-w-md">
+          {form.imageUrl ? (
+            <div className="relative group rounded-[22px] overflow-hidden border border-futuremilestone-soft-line bg-futuremilestone-panel-strong shadow-md aspect-square max-w-[240px] flex items-center justify-center">
+              <img
+                src={form.imageUrl}
+                alt="Product Thumbnail"
+                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-3">
+                <button
+                  type="button"
+                  onClick={() => thumbnailInputRef.current?.click()}
+                  disabled={thumbnailUploading}
+                  className="px-3 py-1.5 bg-white text-black rounded-full font-semibold text-[12px] hover:bg-gray-100 transition shadow-lg cursor-pointer flex items-center gap-1.5"
+                >
+                  {thumbnailUploading ? <SpinnerIcon className="w-3.5 h-3.5" /> : <CloudUploadIcon className="w-3.5 h-3.5" />}
+                  Change
+                </button>
+                <button
+                  type="button"
+                  onClick={() => updateField("imageUrl", "")}
+                  className="p-2 bg-red-600 text-white rounded-full font-semibold hover:bg-red-700 transition shadow-lg cursor-pointer"
+                  title="Remove Image"
+                >
+                  <TrashIcon className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onDragOver={handleDragOver}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                setIsDraggingThumbnail(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setIsDraggingThumbnail(false);
+              }}
+              onDrop={async (e) => {
+                e.preventDefault();
+                setIsDraggingThumbnail(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file && file.type.startsWith("image/")) {
+                  await uploadThumbnailFile(file);
+                }
+              }}
+              onClick={() => thumbnailInputRef.current?.click()}
+              className={`relative flex flex-col items-center justify-center gap-3 p-6 text-center rounded-[22px] border-2 border-dashed transition-all cursor-pointer aspect-square max-w-[240px] ${
+                isDraggingThumbnail
+                  ? "border-futuremilestone-accent bg-futuremilestone-accent/10 scale-[1.01]"
+                  : "border-futuremilestone-soft-line bg-futuremilestone-panel-strong hover:border-futuremilestone-accent/50 hover:bg-futuremilestone-panel-strong/80"
+              }`}
+            >
+              {thumbnailUploading ? (
+                <div className="flex flex-col items-center gap-2 text-futuremilestone-accent">
+                  <SpinnerIcon className="w-8 h-8" />
+                  <span className="text-[13px] font-semibold">Uploading...</span>
+                </div>
+              ) : (
+                <>
+                  <div className="w-10 h-10 rounded-full bg-futuremilestone-accent/10 grid place-items-center text-futuremilestone-accent">
+                    <CloudUploadIcon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="m-0 text-[13px] font-semibold text-futuremilestone-ink">
+                      Click or drag thumbnail photo here
+                    </p>
+                    <p className="mt-1 mb-0 text-[11px] text-futuremilestone-muted">
+                      JPG, PNG, WEBP (Max 10MB)
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
