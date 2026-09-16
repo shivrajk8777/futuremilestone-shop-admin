@@ -48,7 +48,7 @@ export async function createAdminSession(adminId: string): Promise<void> {
   });
 
   const cookieStore = await cookies();
-  const { ADMIN_SESSION_COOKIE_NAME } = getServerEnv();
+  const { ADMIN_SESSION_COOKIE_NAME, ADMIN_SESSION_TTL_HOURS } = getServerEnv();
 
   cookieStore.set(ADMIN_SESSION_COOKIE_NAME, sessionToken, {
     httpOnly: true,
@@ -56,6 +56,7 @@ export async function createAdminSession(adminId: string): Promise<void> {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     expires: expiresAt,
+    maxAge: ADMIN_SESSION_TTL_HOURS * 60 * 60,
   });
 }
 

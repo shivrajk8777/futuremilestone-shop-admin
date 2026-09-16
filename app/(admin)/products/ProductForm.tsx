@@ -972,11 +972,10 @@ export default function ProductForm({
                 }
               }}
               onClick={() => thumbnailInputRef.current?.click()}
-              className={`relative flex flex-col items-center justify-center gap-3 p-6 text-center rounded-[22px] border-2 border-dashed transition-all cursor-pointer aspect-square max-w-[240px] ${
-                isDraggingThumbnail
+              className={`relative flex flex-col items-center justify-center gap-3 p-6 text-center rounded-[22px] border-2 border-dashed transition-all cursor-pointer aspect-square max-w-[240px] ${isDraggingThumbnail
                   ? "border-futuremilestone-accent bg-futuremilestone-accent/10 scale-[1.01]"
                   : "border-futuremilestone-soft-line bg-futuremilestone-panel-strong hover:border-futuremilestone-accent/50 hover:bg-futuremilestone-panel-strong/80"
-              }`}
+                }`}
             >
               {thumbnailUploading ? (
                 <div className="flex flex-col items-center gap-2 text-futuremilestone-accent">
@@ -1109,11 +1108,10 @@ export default function ProductForm({
                 key={c.id}
                 type="button"
                 onClick={() => setActiveColorId(c.id)}
-                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-[18px] text-[13px] font-semibold transition-all duration-200 border cursor-pointer whitespace-nowrap ${
-                  isActive
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-[18px] text-[13px] font-semibold transition-all duration-200 border cursor-pointer whitespace-nowrap ${isActive
                     ? "bg-futuremilestone-accent text-futuremilestone-bg border-futuremilestone-accent shadow-md scale-[1.02]"
                     : "bg-futuremilestone-panel-strong text-futuremilestone-ink border-futuremilestone-soft-line hover:border-futuremilestone-accent/40"
-                }`}
+                  }`}
               >
                 {c.image ? (
                   <img
@@ -1126,9 +1124,8 @@ export default function ProductForm({
                 )}
                 <span>{c.name.trim() || `Color ${index + 1}`}</span>
                 <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                    isActive ? "bg-black/20 text-white" : "bg-futuremilestone-ink/5 text-futuremilestone-muted"
-                  }`}
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isActive ? "bg-black/20 text-white" : "bg-futuremilestone-ink/5 text-futuremilestone-muted"
+                    }`}
                 >
                   {imageCount} {imageCount === 1 ? "img" : "imgs"}
                 </span>
@@ -1218,11 +1215,10 @@ export default function ProductForm({
                     }
                   }}
                   onClick={() => !colorSwatchUploading[activeColor.id] && swatchInputRef.current?.click()}
-                  className={`w-28 h-28 rounded-[20px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-200 flex-shrink-0 ${
-                    isDraggingSwatch[activeColor.id]
+                  className={`w-28 h-28 rounded-[20px] border-2 border-dashed flex flex-col items-center justify-center cursor-pointer relative overflow-hidden transition-all duration-200 flex-shrink-0 ${isDraggingSwatch[activeColor.id]
                       ? "border-futuremilestone-accent bg-futuremilestone-accent/5 scale-95"
                       : "border-futuremilestone-line bg-futuremilestone-panel/40 hover:border-futuremilestone-accent/40 hover:bg-futuremilestone-panel/60"
-                  }`}
+                    }`}
                 >
                   {colorSwatchUploading[activeColor.id] ? (
                     <SpinnerIcon className="w-6 h-6 text-futuremilestone-accent" />
@@ -1312,11 +1308,10 @@ export default function ProductForm({
                   }
                 }}
                 onClick={() => !colorGalleryUploading[activeColor.id] && galleryInputRef.current?.click()}
-                className={`relative flex flex-col items-center justify-center min-h-[140px] rounded-[22px] border-2 border-dashed p-5 transition-all duration-300 cursor-pointer overflow-hidden ${
-                  isDraggingGallery[activeColor.id]
+                className={`relative flex flex-col items-center justify-center min-h-[140px] rounded-[22px] border-2 border-dashed p-5 transition-all duration-300 cursor-pointer overflow-hidden ${isDraggingGallery[activeColor.id]
                     ? "border-futuremilestone-accent bg-futuremilestone-accent/5 scale-[0.99]"
                     : "border-futuremilestone-line bg-futuremilestone-panel/40 hover:border-futuremilestone-accent/40 hover:bg-futuremilestone-panel/60"
-                }`}
+                  }`}
               >
                 {colorGalleryUploading[activeColor.id] ? (
                   <div className="flex flex-col items-center justify-center gap-2 animate-pulse">
@@ -1364,11 +1359,10 @@ export default function ProductForm({
                           onDragStart={(e) => handleColorGalleryDragStart(e, idx)}
                           onDragOver={(e) => handleColorGalleryDragOver(activeColor.id, e, idx)}
                           onDragEnd={() => setDraggedGalleryIndex(null)}
-                          className={`group relative aspect-square w-full rounded-[18px] overflow-hidden border bg-white shadow-sm transition-all duration-200 select-none cursor-grab active:cursor-grabbing ${
-                            isDragged
+                          className={`group relative aspect-square w-full rounded-[18px] overflow-hidden border bg-white shadow-sm transition-all duration-200 select-none cursor-grab active:cursor-grabbing ${isDragged
                               ? "border-futuremilestone-accent ring-2 ring-futuremilestone-accent/30 scale-95 opacity-50 z-20"
                               : "border-futuremilestone-soft-line hover:border-futuremilestone-accent/50 hover:shadow-md hover:-translate-y-0.5"
-                          }`}
+                            }`}
                         >
                           <img
                             src={url}
@@ -1491,11 +1485,10 @@ export default function ProductForm({
 
             return (
               <div
-                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-futuremilestone-panel-strong border transition-all duration-200 ${
-                  isDuplicate
+                className={`flex flex-col sm:flex-row sm:items-center justify-between gap-[18px] p-[18px] rounded-[22px] bg-futuremilestone-panel-strong border transition-all duration-200 ${isDuplicate
                     ? "border-red-400 bg-red-500/5 shadow-sm"
                     : "border-futuremilestone-soft-line"
-                }`}
+                  }`}
                 key={dimension.id}
               >
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
@@ -1517,11 +1510,10 @@ export default function ProductForm({
                       }
                       type="text"
                       value={dimension.label}
-                      className={`${inputClass} ${
-                        isDuplicate
+                      className={`${inputClass} ${isDuplicate
                           ? "!border-red-500 !bg-red-500/10 text-red-900 focus:!ring-red-500/20"
                           : ""
-                      }`}
+                        }`}
                       placeholder="e.g., Standard, Large, King"
                     />
                   </div>
@@ -1601,11 +1593,10 @@ export default function ProductForm({
 
                   <label
                     htmlFor={`detail-image-upload-${detail.id}`}
-                    className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${
-                      draggingDetails[detail.id]
+                    className={`relative flex flex-col items-center justify-center min-h-[160px] rounded-[24px] border-2 border-dashed p-6 transition-all duration-300 cursor-pointer overflow-hidden ${draggingDetails[detail.id]
                         ? "border-futuremilestone-accent bg-futuremilestone-accent/5 scale-[0.99]"
                         : "border-futuremilestone-line bg-futuremilestone-panel/40 hover:border-futuremilestone-accent/40 hover:bg-futuremilestone-panel/60"
-                    }`}
+                      }`}
                     onDragOver={handleDragOver}
                     onDragEnter={(e) => {
                       e.preventDefault();

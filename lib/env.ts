@@ -11,7 +11,7 @@ const serverEnvSchema = z.object({
     .string()
     .min(1)
     .default("futuremilestone_admin_session"),
-  ADMIN_SESSION_TTL_HOURS: z.coerce.number().int().positive().default(168),
+  ADMIN_SESSION_TTL_HOURS: z.coerce.number().int().positive().default(24),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;
