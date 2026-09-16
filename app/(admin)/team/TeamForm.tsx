@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, FormEvent, ChangeEvent, DragEvent } from "react";
+import { convertToWebP } from "../../../lib/image-convert";
+
 
 function SpinnerIcon({ className = "" }: { className?: string }) {
   return (
@@ -78,10 +80,14 @@ export default function TeamForm({ member, onCancel, onSuccess }: TeamFormProps)
         throw new Error("Unable to prepare upload.");
       }
 
-      const { apiKey, cloudName, folder, signature, timestamp } = await signResponse.json();
+      const [signData, webpFile] = await Promise.all([
+        signResponse.json(),
+        convertToWebP(file),
+      ]);
+      const { apiKey, cloudName, folder, signature, timestamp } = signData;
 
       const uploadData = new FormData();
-      uploadData.append("file", file);
+      uploadData.append("file", webpFile);
       uploadData.append("api_key", apiKey);
       uploadData.append("folder", folder);
       uploadData.append("signature", signature);

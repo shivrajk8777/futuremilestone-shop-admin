@@ -7,6 +7,8 @@ import SwalMessageEffect from "../../../components/SwalMessageEffect";
 import { CollectionSelectItem } from "../../../lib/collections";
 import { ProductDetail, ColorVariantInput, MaterialInput, DimensionInput, DetailSectionInput } from "../../../lib/products";
 import { ProductActionState } from "./actions";
+import { convertToWebP } from "../../../lib/image-convert";
+
 
 const initialState: ProductActionState = { error: "" };
 
@@ -554,10 +556,14 @@ export default function ProductForm({
       const signResponse = await fetch("/api/cloudinary/sign", { method: "POST" });
       if (!signResponse.ok) throw new Error("Could not sign upload request.");
 
-      const { apiKey, cloudName, folder, signature, timestamp } = await signResponse.json();
+      const [signData, webpFile] = await Promise.all([
+        signResponse.json(),
+        convertToWebP(file),
+      ]);
+      const { apiKey, cloudName, folder, signature, timestamp } = signData;
 
       const uploadData = new FormData();
-      uploadData.append("file", file);
+      uploadData.append("file", webpFile);
       uploadData.append("api_key", apiKey);
       uploadData.append("folder", folder);
       uploadData.append("signature", signature);
@@ -593,10 +599,14 @@ export default function ProductForm({
       const signResponse = await fetch("/api/cloudinary/sign", { method: "POST" });
       if (!signResponse.ok) throw new Error("Could not sign upload request.");
 
-      const { apiKey, cloudName, folder, signature, timestamp } = await signResponse.json();
+      const [signData, webpFile] = await Promise.all([
+        signResponse.json(),
+        convertToWebP(file),
+      ]);
+      const { apiKey, cloudName, folder, signature, timestamp } = signData;
 
       const uploadData = new FormData();
-      uploadData.append("file", file);
+      uploadData.append("file", webpFile);
       uploadData.append("api_key", apiKey);
       uploadData.append("folder", folder);
       uploadData.append("signature", signature);
@@ -636,8 +646,9 @@ export default function ProductForm({
       for (const file of Array.from(files)) {
         if (!file.type.startsWith("image/")) continue;
 
+        const webpFile = await convertToWebP(file);
         const uploadData = new FormData();
-        uploadData.append("file", file);
+        uploadData.append("file", webpFile);
         uploadData.append("api_key", apiKey);
         uploadData.append("folder", folder);
         uploadData.append("signature", signature);
@@ -684,10 +695,14 @@ export default function ProductForm({
       const signResponse = await fetch("/api/cloudinary/sign", { method: "POST" });
       if (!signResponse.ok) throw new Error("Could not sign upload request.");
 
-      const { apiKey, cloudName, folder, signature, timestamp } = await signResponse.json();
+      const [signData, webpFile] = await Promise.all([
+        signResponse.json(),
+        convertToWebP(file),
+      ]);
+      const { apiKey, cloudName, folder, signature, timestamp } = signData;
 
       const uploadData = new FormData();
-      uploadData.append("file", file);
+      uploadData.append("file", webpFile);
       uploadData.append("api_key", apiKey);
       uploadData.append("folder", folder);
       uploadData.append("signature", signature);

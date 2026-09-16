@@ -5,6 +5,8 @@ import SwalMessageEffect from "../../../components/SwalMessageEffect";
 import { MasterSettings, CarouselSlide } from "../../../lib/settings";
 import { CollectionSelectItem } from "../../../lib/collections";
 import { MasterActionState } from "./actions";
+import { convertToWebP } from "../../../lib/image-convert";
+
 
 const initialState: MasterActionState = { error: "" };
 
@@ -184,11 +186,14 @@ export default function MasterSettingsForm({ initialSettings, collections = [], 
         throw new Error("Unable to prepare upload.");
       }
 
-      const { apiKey, cloudName, folder, signature, timestamp } =
-        await signResponse.json();
+      const [signData, webpFile] = await Promise.all([
+        signResponse.json(),
+        convertToWebP(file),
+      ]);
+      const { apiKey, cloudName, folder, signature, timestamp } = signData;
 
       const uploadData = new FormData();
-      uploadData.append("file", file);
+      uploadData.append("file", webpFile);
       uploadData.append("api_key", apiKey);
       uploadData.append("folder", folder);
       uploadData.append("signature", signature);

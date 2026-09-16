@@ -4,6 +4,8 @@ import { useActionState, useMemo, useState, ChangeEvent } from "react";
 import SwalMessageEffect from "../../../components/SwalMessageEffect";
 import { CollectionDetail } from "../../../lib/collections";
 import { CollectionActionState } from "./actions";
+import { convertToWebP } from "../../../lib/image-convert";
+
 
 const initialState: CollectionActionState = { error: "" };
 
@@ -100,11 +102,14 @@ export default function CollectionForm({
         throw new Error("Unable to prepare upload.");
       }
 
-      const { apiKey, cloudName, folder, signature, timestamp } =
-        await signResponse.json();
+      const [signData, webpFile] = await Promise.all([
+        signResponse.json(),
+        convertToWebP(file),
+      ]);
+      const { apiKey, cloudName, folder, signature, timestamp } = signData;
 
       const uploadData = new FormData();
-      uploadData.append("file", file);
+      uploadData.append("file", webpFile);
       uploadData.append("api_key", apiKey);
       uploadData.append("folder", folder);
       uploadData.append("signature", signature);

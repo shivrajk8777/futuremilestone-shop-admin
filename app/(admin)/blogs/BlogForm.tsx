@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, ReactNode, FormEvent, ChangeEvent, DragEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { convertToWebP } from '../../../lib/image-convert';
+
 
 function SpinnerIcon({ className = '' }: { className?: string }) {
   return (
@@ -116,10 +118,14 @@ export default function BlogForm({ blog, isEdit = false }: BlogFormProps) {
     try {
       const signRes = await fetch(`/api/cloudinary/sign-blog`, { method: 'POST' });
       if (!signRes.ok) throw new Error('Could not prepare upload');
-      const { apiKey, cloudName, folder, signature, timestamp } = await signRes.json();
+      const [signData, webpFile] = await Promise.all([
+        signRes.json(),
+        convertToWebP(file),
+      ]);
+      const { apiKey, cloudName, folder, signature, timestamp } = signData;
 
       const fd = new FormData();
-      fd.append('file', file);
+      fd.append('file', webpFile);
       fd.append('api_key', apiKey);
       fd.append('folder', folder);
       fd.append('signature', signature);
