@@ -2,6 +2,7 @@ import { Collection, Document, ObjectId } from "mongodb";
 import { z } from "zod";
 import { findCollectionSummaryById } from "./collections";
 import { getDatabase } from "./mongodb";
+import { deleteMultipleCloudinaryImages } from "./cloudinary";
 
 const colorVariantSchema = z.object({
   id: z.string().min(1),
@@ -320,10 +321,7 @@ export async function updateProduct(productId: string, input: unknown): Promise<
   const collection = await getProductsCollection();
   const slug = await buildUniqueSlug(payload.name, productId);
 
-  const existing = await collection.findOne(
-    { _id: new ObjectId(productId) },
-    { projection: { collectionId: 1, order: 1 } }
-  );
+  const existing = await collection.findOne({ _id: new ObjectId(productId) });
 
   let nextOrder = existing?.order;
 
@@ -340,6 +338,57 @@ export async function updateProduct(productId: string, input: unknown): Promise<
   const colors = payload.colors || [];
   const allGalleryImages = colors.flatMap((c) => c.galleryImages || []);
   const mainImage = payload.imageUrl || colors[0]?.image || allGalleryImages[0] || "";
+
+  // Collect previous images to detect any replaced or removed images
+  const oldImages: string[] = [];
+  if (existing?.imageUrl) oldImages.push(existing.imageUrl);
+  if (Array.isArray(existing?.colors)) {
+    for (const c of existing.colors) {
+      if (c.image) oldImages.push(c.image);
+      if (Array.isArray(c.galleryImages)) {
+        for (const g of c.galleryImages) {
+          if (g) oldImages.push(g);
+        }
+      }
+    }
+  }
+  if (Array.isArray(existing?.galleryImages)) {
+    for (const g of existing.galleryImages) {
+      if (g) oldImages.push(g);
+    }
+  }
+  if (Array.isArray(existing?.details)) {
+    for (const d of existing.details) {
+      if (d.imageUrl) oldImages.push(d.imageUrl);
+    }
+  }
+
+  const newImages = new Set<string>();
+  if (mainImage) newImages.add(mainImage);
+  if (payload.imageUrl) newImages.add(payload.imageUrl);
+  for (const c of colors) {
+    if (c.image) newImages.add(c.image);
+    if (Array.isArray(c.galleryImages)) {
+      for (const g of c.galleryImages) {
+        if (g) newImages.add(g);
+      }
+    }
+  }
+  if (Array.isArray(payload.details)) {
+    for (const d of payload.details) {
+      if (d.imageUrl) newImages.add(d.imageUrl);
+    }
+  }
+
+  const replacedOrRemoved = oldImages.filter(
+    (img) => !newImages.has(img) && img.includes("cloudinary.com")
+  );
+
+  if (replacedOrRemoved.length > 0) {
+    deleteMultipleCloudinaryImages(replacedOrRemoved).catch((err) => {
+      console.error("Failed to delete replaced Cloudinary images:", err);
+    });
+  }
 
   await collection.updateOne(
     { _id: new ObjectId(productId) },

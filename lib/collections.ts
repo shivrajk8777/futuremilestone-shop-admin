@@ -1,6 +1,7 @@
 import { Collection, Document, ObjectId } from "mongodb";
 import { z } from "zod";
 import { getDatabase } from "./mongodb";
+import { deleteCloudinaryImage } from "./cloudinary";
 
 const collectionSchema = z.object({
   imageUrl: z.string().url("Collection image is required."),
@@ -220,6 +221,17 @@ export async function updateCollection(collectionId: string, input: unknown): Pr
   const payload = collectionSchema.parse(input);
   const collection = await getCollectionsCollection();
   const slug = await buildUniqueSlug(payload.name, collectionId);
+
+  const existing = await collection.findOne({ _id: new ObjectId(collectionId) });
+  if (
+    existing?.imageUrl &&
+    existing.imageUrl !== payload.imageUrl &&
+    existing.imageUrl.includes("cloudinary.com")
+  ) {
+    deleteCloudinaryImage(existing.imageUrl).catch((err) => {
+      console.error("Failed to delete old collection image:", err);
+    });
+  }
 
   await collection.updateOne(
     { _id: new ObjectId(collectionId) },

@@ -1,5 +1,6 @@
 import { Collection, Document } from "mongodb";
 import { getDatabase } from "./mongodb";
+import { deleteMultipleCloudinaryImages } from "./cloudinary";
 
 export interface CarouselHotspot {
   top: string;
@@ -95,6 +96,8 @@ export async function getSettings(): Promise<MasterSettings> {
 export async function updateSettings(input: Partial<MasterSettings>): Promise<{ success: boolean }> {
   const collection = await getSettingsCollection();
   
+  const existing = await collection.findOne({ _id: "master_settings" as any });
+
   const payload = {
     marqueeVisible: !!input.marqueeVisible,
     marqueeText: (input.marqueeText || "").trim() || DEFAULT_SETTINGS.marqueeText,
@@ -113,6 +116,39 @@ export async function updateSettings(input: Partial<MasterSettings>): Promise<{ 
     })) : DEFAULT_SETTINGS.slides,
     updatedAt: new Date(),
   };
+
+  // Collect previous images
+  const oldImages: string[] = [];
+  if (Array.isArray(existing?.slides)) {
+    for (const slide of existing.slides) {
+      if (slide.bgImage) oldImages.push(slide.bgImage);
+      if (Array.isArray(slide.hotspots)) {
+        for (const h of slide.hotspots) {
+          if (h.image) oldImages.push(h.image);
+        }
+      }
+    }
+  }
+
+  const newImages = new Set<string>();
+  for (const slide of payload.slides) {
+    if (slide.bgImage) newImages.add(slide.bgImage);
+    if (Array.isArray(slide.hotspots)) {
+      for (const h of slide.hotspots) {
+        if (h.image) newImages.add(h.image);
+      }
+    }
+  }
+
+  const replacedOrRemoved = oldImages.filter(
+    (img) => !newImages.has(img) && img.includes("cloudinary.com")
+  );
+
+  if (replacedOrRemoved.length > 0) {
+    deleteMultipleCloudinaryImages(replacedOrRemoved).catch((err) => {
+      console.error("Failed to delete old settings images from Cloudinary:", err);
+    });
+  }
 
   await collection.updateOne(
     { _id: "master_settings" as any },

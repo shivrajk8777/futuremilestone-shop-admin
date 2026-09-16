@@ -459,11 +459,32 @@ export default function ProductForm({
     setActiveColorId(newColor.id);
   }
 
+  async function deleteCloudinaryAsset(url?: string) {
+    if (!url || !url.includes("cloudinary.com")) return;
+    try {
+      await fetch("/api/cloudinary/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+    } catch (err) {
+      console.error("Failed to delete Cloudinary asset:", err);
+    }
+  }
+
   function removeColorVariant(colorId: string) {
     if (form.colors.length <= 1) {
       setUploadError("You must have at least one color variant.");
       return;
     }
+    const colorToRemove = form.colors.find((c) => c.id === colorId);
+    if (colorToRemove?.image) {
+      deleteCloudinaryAsset(colorToRemove.image);
+    }
+    if (Array.isArray(colorToRemove?.galleryImages)) {
+      colorToRemove.galleryImages.forEach(deleteCloudinaryAsset);
+    }
+
     const updated = form.colors.filter((c) => c.id !== colorId);
     setForm((current) => ({ ...current, colors: updated }));
     if (activeColorId === colorId) {
@@ -513,14 +534,19 @@ export default function ProductForm({
   }
 
   function removeDetailSection(id: string) {
+    const detail = form.details.find((d) => d.id === id);
+    if (detail?.imageUrl) {
+      deleteCloudinaryAsset(detail.imageUrl);
+    }
     setForm((current) => ({
       ...current,
-      details: current.details.filter((detail) => detail.id !== id),
+      details: current.details.filter((item) => item.id !== id),
     }));
   }
 
   // --- Cloudinary Uploads ---
   async function uploadThumbnailFile(file: File) {
+    const oldThumbnail = form.imageUrl;
     setThumbnailUploading(true);
     setUploadError("");
 
@@ -546,6 +572,10 @@ export default function ProductForm({
 
       const result = await uploadResponse.json();
       updateField("imageUrl", result.secure_url);
+
+      if (oldThumbnail && oldThumbnail !== result.secure_url) {
+        deleteCloudinaryAsset(oldThumbnail);
+      }
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Thumbnail upload failed.");
     } finally {
@@ -554,6 +584,8 @@ export default function ProductForm({
   }
 
   async function uploadColorSwatchFile(colorId: string, file: File) {
+    const prevColor = form.colors.find((c) => c.id === colorId);
+    const oldSwatch = prevColor?.image;
     setColorSwatchUploading((prev) => ({ ...prev, [colorId]: true }));
     setUploadError("");
 
@@ -579,6 +611,10 @@ export default function ProductForm({
 
       const result = await uploadResponse.json();
       updateColorField(colorId, "image", result.secure_url);
+
+      if (oldSwatch && oldSwatch !== result.secure_url) {
+        deleteCloudinaryAsset(oldSwatch);
+      }
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Swatch upload failed.");
     } finally {
@@ -639,6 +675,8 @@ export default function ProductForm({
   }
 
   async function uploadDetailImageFile(detailId: string, file: File) {
+    const prevDetail = form.details.find((d) => d.id === detailId);
+    const oldDetailImg = prevDetail?.imageUrl;
     setDetailsUploading((curr) => ({ ...curr, [detailId]: true }));
     setUploadError("");
 
@@ -664,6 +702,10 @@ export default function ProductForm({
 
       const result = await uploadResponse.json();
       updateDetailField(detailId, "imageUrl", result.secure_url);
+
+      if (oldDetailImg && oldDetailImg !== result.secure_url) {
+        deleteCloudinaryAsset(oldDetailImg);
+      }
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Detail image upload failed.");
     } finally {
@@ -673,6 +715,12 @@ export default function ProductForm({
 
   // --- Color Gallery Operations ---
   function removeColorGalleryImage(colorId: string, idx: number) {
+    const color = form.colors.find((c) => c.id === colorId);
+    const imgToRemove = color?.galleryImages?.[idx];
+    if (imgToRemove) {
+      deleteCloudinaryAsset(imgToRemove);
+    }
+
     setForm((current) => ({
       ...current,
       colors: current.colors.map((c) => {
@@ -847,7 +895,10 @@ export default function ProductForm({
           {form.imageUrl && (
             <button
               type="button"
-              onClick={() => updateField("imageUrl", "")}
+              onClick={() => {
+                if (form.imageUrl) deleteCloudinaryAsset(form.imageUrl);
+                updateField("imageUrl", "");
+              }}
               className="px-3.5 py-1.5 rounded-full bg-red-500/10 hover:bg-red-500 text-red-600 hover:text-white text-[12px] font-semibold transition-colors flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
             >
               <TrashIcon className="w-3.5 h-3.5" />
@@ -890,7 +941,10 @@ export default function ProductForm({
                 </button>
                 <button
                   type="button"
-                  onClick={() => updateField("imageUrl", "")}
+                  onClick={() => {
+                    if (form.imageUrl) deleteCloudinaryAsset(form.imageUrl);
+                    updateField("imageUrl", "");
+                  }}
                   className="p-2 bg-red-600 text-white rounded-full font-semibold hover:bg-red-700 transition shadow-lg cursor-pointer"
                   title="Remove Image"
                 >

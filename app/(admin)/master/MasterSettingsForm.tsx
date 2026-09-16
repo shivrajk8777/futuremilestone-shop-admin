@@ -138,7 +138,30 @@ export default function MasterSettingsForm({ initialSettings, collections = [], 
     }));
   }
 
+  async function deleteCloudinaryAsset(url?: string) {
+    if (!url || !url.includes("cloudinary.com")) return;
+    try {
+      await fetch("/api/cloudinary/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+    } catch (err) {
+      console.error("Failed to delete Cloudinary asset:", err);
+    }
+  }
+
   function removeSlide(idx: number) {
+    const slideToRemove = form.slides[idx];
+    if (slideToRemove?.bgImage) {
+      deleteCloudinaryAsset(slideToRemove.bgImage);
+    }
+    if (Array.isArray(slideToRemove?.hotspots)) {
+      slideToRemove.hotspots.forEach((h: any) => {
+        if (h?.image) deleteCloudinaryAsset(h.image);
+      });
+    }
+
     setForm((current: MasterSettings) => ({
       ...current,
       slides: current.slides.filter((_: any, i: number) => i !== idx),
@@ -148,6 +171,7 @@ export default function MasterSettingsForm({ initialSettings, collections = [], 
   async function uploadImageFile(file: File, idx: number) {
     if (!file) return;
 
+    const prevBgImage = form.slides[idx]?.bgImage;
     setUploadError("");
     setUploadingIndices((prev) => ({ ...prev, [idx]: true }));
 
@@ -185,6 +209,10 @@ export default function MasterSettingsForm({ initialSettings, collections = [], 
       const result = await uploadResponse.json();
 
       updateSlide(idx, "bgImage", result.secure_url);
+
+      if (prevBgImage && prevBgImage !== result.secure_url) {
+        deleteCloudinaryAsset(prevBgImage);
+      }
     } catch (error) {
       setUploadError(
         error instanceof Error ? error.message : "Image upload failed.",
@@ -468,6 +496,9 @@ export default function MasterSettingsForm({ initialSettings, collections = [], 
                                   type="button"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    if (slide.bgImage) {
+                                      deleteCloudinaryAsset(slide.bgImage);
+                                    }
                                     updateSlide(idx, "bgImage", "");
                                   }}
                                   className="w-8 h-8 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-md transition duration-200"

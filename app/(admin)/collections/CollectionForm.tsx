@@ -22,6 +22,27 @@ function getUploadIcon() {
   );
 }
 
+function TrashIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M3 6h18" />
+      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+      <line x1="10" x2="10" y1="11" y2="17" />
+      <line x1="14" x2="14" y1="11" y2="17" />
+    </svg>
+  );
+}
+
 export interface CollectionFormProps {
   action: (state: CollectionActionState, formData: FormData) => Promise<CollectionActionState>;
   collection?: CollectionDetail | null;
@@ -48,6 +69,19 @@ export default function CollectionForm({
 
   const payload = useMemo(() => JSON.stringify(form), [form]);
 
+  async function deleteCloudinaryAsset(url?: string) {
+    if (!url || !url.includes("cloudinary.com")) return;
+    try {
+      await fetch("/api/cloudinary/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+    } catch (err) {
+      console.error("Failed to delete Cloudinary asset:", err);
+    }
+  }
+
   async function handleImageUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -55,6 +89,7 @@ export default function CollectionForm({
       return;
     }
 
+    const oldImage = form.imageUrl;
     setUploadError("");
     setUploading(true);
 
@@ -90,6 +125,10 @@ export default function CollectionForm({
         ...current,
         imageUrl: result.secure_url,
       }));
+
+      if (oldImage && oldImage !== result.secure_url) {
+        deleteCloudinaryAsset(oldImage);
+      }
     } catch (error) {
       setUploadError(error instanceof Error ? error.message : "Image upload failed.");
     } finally {
@@ -134,8 +173,19 @@ export default function CollectionForm({
               </span>
             </div>
             {form.imageUrl ? (
-              <div className="mt-2 w-full max-w-[280px] rounded-[22px] overflow-hidden border border-futuremilestone-soft-line bg-futuremilestone-panel-strong">
+              <div className="mt-2 relative group w-full max-w-[280px] rounded-[22px] overflow-hidden border border-futuremilestone-soft-line bg-futuremilestone-panel-strong">
                 <img alt={form.name || "Collection preview"} className="block w-full h-auto object-cover" src={form.imageUrl} />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (form.imageUrl) deleteCloudinaryAsset(form.imageUrl);
+                    setForm((current) => ({ ...current, imageUrl: "" }));
+                  }}
+                  className="absolute top-2.5 right-2.5 p-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition shadow-lg cursor-pointer opacity-0 group-hover:opacity-100 flex items-center justify-center"
+                  title="Remove Image"
+                >
+                  <TrashIcon className="w-3.5 h-3.5" />
+                </button>
               </div>
             ) : null}
             {uploadError ? (
