@@ -231,7 +231,7 @@ export async function getProductById(productId: string): Promise<ProductDetail |
 
   return {
     id: product._id.toString(),
-    imageUrl: product.imageUrl ?? (colors[0]?.image || colors[0]?.galleryImages?.[0] || ""),
+    imageUrl: product.imageUrl || colors.flatMap((c: any) => c.galleryImages || [])[0] || colors[0]?.image || "",
     collectionId: product.collectionId ?? "",
     name: product.name ?? "",
     introText: product.introText ?? "",
@@ -278,7 +278,7 @@ export async function createProduct(input: unknown): Promise<{ id: string; slug:
 
   const colors = payload.colors || [];
   const allGalleryImages = colors.flatMap((c) => c.galleryImages || []);
-  const mainImage = payload.imageUrl || colors[0]?.image || allGalleryImages[0] || "";
+  const mainImage = (payload.imageUrl && payload.imageUrl.trim()) || allGalleryImages[0] || colors[0]?.image || "";
 
   const document = {
     imageUrl: mainImage,
@@ -337,7 +337,7 @@ export async function updateProduct(productId: string, input: unknown): Promise<
 
   const colors = payload.colors || [];
   const allGalleryImages = colors.flatMap((c) => c.galleryImages || []);
-  const mainImage = payload.imageUrl || colors[0]?.image || allGalleryImages[0] || "";
+  const mainImage = (payload.imageUrl && payload.imageUrl.trim()) || allGalleryImages[0] || colors[0]?.image || "";
 
   // Collect previous images to detect any replaced or removed images
   const oldImages: string[] = [];

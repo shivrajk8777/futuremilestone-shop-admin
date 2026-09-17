@@ -388,7 +388,7 @@ export default function ProductForm({
         galleryImages: Array.isArray(color.galleryImages) ? color.galleryImages : [],
       }));
 
-      const primaryImage = normalizedColors[0]?.image || normalizedColors[0]?.galleryImages?.[0] || "";
+      const primaryImage = form.imageUrl.trim() || normalizedColors[0]?.galleryImages?.[0] || normalizedColors[0]?.image || "";
       const allGalleryImages = normalizedColors.flatMap((c) => c.galleryImages);
 
       return JSON.stringify({
