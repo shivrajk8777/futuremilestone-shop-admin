@@ -167,7 +167,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
       const result = await sendEmail({
         to: recipientEmail,
-        subject: "Complete Your Purchase at Future Milestone 🛒",
+        subject: "Complete Your Purchase at Future Milestone",
         html: emailHtml,
       });
 
