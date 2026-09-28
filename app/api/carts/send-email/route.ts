@@ -43,7 +43,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const shopUrl = process.env.NEXT_PUBLIC_SHOP_URL || "http://localhost:3001";
+    const shopUrl = process.env.NEXT_PUBLIC_SHOP_URL || "https://www.futuremilestone.shop";
     const checkoutUrl = `${shopUrl}/checkout`;
 
     let successCount = 0;
@@ -124,7 +124,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             <h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: #111827; text-transform: uppercase; line-height: 1;">FUTURE MILESTONE</h1>
           </div>
 
-          <h2 style="font-size: 18px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 12px;">You Left Something Special in Your Cart 🛒</h2>
+          <h2 style="font-size: 18px; font-weight: 700; color: #111827; margin-top: 0; margin-bottom: 12px;">You Left Something Special in Your Cart</h2>
           
           <p style="font-size: 13.5px; line-height: 1.6; color: #374151; margin-bottom: 20px;">
             Dear <strong>${customerName}</strong>,<br/><br/>
